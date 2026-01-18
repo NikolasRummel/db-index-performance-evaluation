@@ -2,22 +2,22 @@
 #import "glossary.typ": glossary-entries
 
 #show: clean-dhbw.with(
-  title: "Evaluation von Typst zur Erstellung einer Abschlussarbeit",
+  title: "Analyse und Vergleich von Datenbankindexstrukturen",
   authors: (
-    (name: "Max Mustermann", student-id: "7654321", course: "TINF22B2", course-of-studies: "Informatik", company: (
-      (name: "ABC GmbH", post-code: "76131", city: "Karlsruhe")
+    (name: "Nikolas Rummel", student-id: "7654321", course: "TINF23B6", course-of-studies: "Informatik", company: (
+      (name: "dmTECH GmbH", post-code: "76131", city: "Karlsruhe")
     )),
     // (name: "Juan Pérez", student-id: "1234567", course: "TIM21", course-of-studies: "Mobile Computer Science", company: (
     //   (name: "ABC S.L.", post-code: "08005", city: "Barcelona", country: "Spain")
     // )),
   ),
-  type-of-thesis: "Bachelorarbeit",
+  type-of-thesis: "Studienarbeit", // Bachelorarbeit, Masterarbeit, Studienarbeit, Projektarbeit
   at-university: false, // if true the company name on the title page and the confidentiality statement are hidden
   bibliography: bibliography("sources.bib"),
   date: datetime.today(),
   glossary: glossary-entries, // displays the glossary terms defined in "glossary.typ"
-  language: "de", // en, de
-  supervisor: (company: "John Appleseed", university: "Prof. Dr. Daniel Düsentrieb"),
+  language: "en", // en, de
+  supervisor: (company: "John Appleseed", university: "Prof. Dr. Roland Schätzle"),
   university: "Duale Hochschule Baden-Württemberg",
   university-location: "Karlsruhe",
   university-short: "DHBW",
@@ -28,19 +28,8 @@
 
 #include "sections/test.typ"
 
-= Einleitung
-
-#lorem(100)
-
-#lorem(80)
-
-#lorem(120)
-
-= Erläuterungen
-
 Im folgenden werden einige nützliche Elemente und Funktionen zum Erstellen von Typst-Dokumenten mit diesem Template erläutert.
 
-== Ausdrücke und Abkürzungen
 
 Verwende die `gls`-Funktion, um Ausdrücke aus dem Glossar einzufügen, die dann dorthin verlinkt werden. Ein Beispiel dafür ist: 
 
@@ -49,7 +38,6 @@ Im diesem Kapitel wird eine #gls("Softwareschnittstelle") beschrieben. Man spric
 Das Template nutzt das `glossarium`-Package für solche Glossar-Referenzen. In der zugehörigen #link("https://typst.app/universe/package/glossarium/", "Dokumentation") werden noch weitere Varianten für derartige Querverweise gezeigt. Dort ist auch im Detail erläutert, wie das Glossar aufgebaut werden kann.
 
 
-== Listen
 
 Es gibt Aufzählungslisten oder nummerierte Listen:
 
@@ -61,15 +49,12 @@ Es gibt Aufzählungslisten oder nummerierte Listen:
 + hier wird
 + alles nummeriert.
 
-== Abbildungen und Tabellen
 
 Abbildungen und Tabellen (mit entsprechenden Beschriftungen) werden wie folgt erstellt.
 
-=== Abbildungen
 
 #figure(caption: "Eine Abbildung", image(width: 4cm, "assets/ts.svg"))
 
-=== Tabellen
 
 #figure(
   caption: "Eine Tabelle",
@@ -95,7 +80,6 @@ Abbildungen und Tabellen (mit entsprechenden Beschriftungen) werden wie folgt er
   ),
 )<table>
 
-== Programm Quellcode
 
 Quellcode mit entsprechender Formatierung wird wie folgt eingefügt:
 
@@ -115,7 +99,6 @@ Quellcode mit entsprechender Formatierung wird wie folgt eingefügt:
 )
 
 
-== Verweise
 
 Für Literaturverweise verwendet man die `cite`-Funktion oder die Kurzschreibweise mit dem \@-Zeichen:
 - `#cite(form: "prose", <iso18004>)` ergibt: \ #cite(form: "prose", <iso18004>)

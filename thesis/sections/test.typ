@@ -18,8 +18,6 @@
 
 === Requirements for Index Structures
 
-=== Classification of Index Structures
-
 == Search Tree-Based Index Structures
 
 === B-Trees
@@ -58,22 +56,16 @@
 == Index Structures in Real Database Systems
 
 === PostgreSQL
-// B+-Trees
 
 === MySQL/InnoDB
-// B+-Trees with clustered indexes
 
 === SQLite
-// B+-Trees
 
 === RocksDB / LevelDB
-// LSM-Trees
 
 === Cassandra / ScyllaDB
-// LSM-Trees
 
 === When Databases Use No Index
-// Full table scans, small tables
 
 #pagebreak()
 
@@ -84,235 +76,96 @@
 === Goals and Scope
 
 === Component Diagram
-// Component diagram showing:
-// - IndexInterface (central interface)
-// - Index Implementations: B-Tree, B+-Tree, LSM-Tree, Sequential List
-// - Benchmark Runner
-// - JSON Parser (benchmark.json → operations)
-// - Statistics Collector
-// - Results Writer (→ results.json)
-// - Data flow between components
 
 === Common Interface Design
-// IndexInterface that all structures implement
 
 == Selected Index Structures
-
-=== B-Tree
-
-=== B+-Tree
-
-=== LSM-Tree
-
-=== No Index (Sequential List/Array)
-// Baseline comparison
 
 == Implementation Details
 
 === Technology Stack: Go (Golang)
 
-=== Data Structures
-
-=== Algorithms
-
-=== Optimizations
-
 == Development of Each Index
 
 === B-Tree Implementation
 ==== Node Structure
-// Code included in text
 ==== Insert Operation
-// Code included in text
 ==== Search Operation
-// Code included in text
 ==== Delete Operation
-// Code included in text
 ==== Range Query
-// Code included in text
 
 === B+-Tree Implementation
 ==== Node Structure
-// Code included in text
 ==== Leaf Node Chaining
-// Code included in text
 ==== Insert Operation
-// Code included in text
 ==== Search Operation
-// Code included in text
 ==== Delete Operation
-// Code included in text
 ==== Range Query Optimization
-// Code included in text
 
 === LSM-Tree Implementation
 ==== MemTable Structure
-// Code included in text
 ==== SSTable Format
-// Code included in text
 ==== Write Path
-// Code included in text
 ==== Compaction Strategy
-// Code included in text
 ==== Read Path with Bloom Filters
-// Code included in text
 
 === No Index Implementation
 ==== Simple Array/List Structure
-// Code included in text
 ==== Sequential Operations
-// Code included in text
+
+== Development of the Benchmark 
 
 #pagebreak()
 
-= Benchmark Framework
+= Evaluation and Analysis
 
-== Benchmark Design
-
-=== Requirements
-
-=== Design Decisions
-
-=== Metrics
-
-== Data Generation
-
-=== Sequential Data
-
-=== Random Data
-
-=== Skewed Distributions
-
-=== Real-World Patterns
-
-== JSON-Based Interface
-
-=== Benchmark Specification Format
-
-=== Results Format
-
-=== Examples
-
-== Implementation
-
-=== Benchmark Runner
-// Code will be included here
-
-=== JSON Parser
-// Code will be included here
-
-=== Operation Execution
-// Code will be included here
-
-=== Timing and Statistics Collection
-// Code will be included here
-
-=== Testing and Validation
-// Code examples and test results included
-
-#pagebreak()
-
-= Evaluation
-
-== Benchmark Scenarios
-
-=== Sequential Insertions
-
-=== Random Insertions
-
-=== Point Queries
-
-=== Range Queries
-
-=== Write-Heavy Workloads
-==== High Insert Rate
-==== LSM-Tree Advantage
-==== B-Tree Write Amplification
-
-=== Mixed Workloads
-==== OLTP-like Workload
-==== OLAP-like Workload
-
-=== Read-Heavy Workloads
-==== B+-Tree Advantage
-==== LSM-Tree Read Amplification
-
-=== Delete Operations
-
-== Test Environment
+== Experimental Setup
 
 === Hardware Specifications
 
 === Software Configuration
 
-=== Benchmark Parameters
+=== Benchmark Parameters and Data Generation
 
-== Results
+== Performance Analysis by Operation
 
-=== Insert Performance
-==== Sequential vs Random
-==== B-Tree vs B+-Tree vs LSM-Tree vs No Index
-==== Impact of Degree Parameter
-==== Write Amplification Analysis
-==== Scalability
+=== Insertion Performance
+==== Sequential vs. Random Results
+==== Discussion: Write Amplification and Page Splits
+==== Impact of the Degree Parameter ($k$)
 
-=== Search Performance
-==== Point Queries
-==== B-Tree vs B+-Tree vs LSM-Tree vs No Index
-==== Impact of Tree Height
-==== Bloom Filter Effectiveness (LSM)
-==== Cache Effects
+=== Search and Point Query Performance
+==== Latency Comparison: B-Tree vs. B+-Tree vs. LSM
+==== Discussion: The Cost of Read Amplification in LSM-Trees
+==== Effectiveness of Bloom Filters
 
 === Range Query Performance
-==== B-Tree vs B+-Tree vs LSM-Tree vs No Index
-==== Scaling with Range Size
-==== Sequential Scan Advantage
+==== B+-Tree Scanning vs. LSM Merging
+==== Discussion: Sequential Access Patterns and Iterator Overhead
 
-=== Memory Consumption
-==== Memory per Node/Structure
-==== Total Memory Footprint
-==== LSM-Tree Memory Overhead (MemTable + SSTables)
-==== Trade-offs
+=== Memory and Storage Footprint
+==== Memory Consumption per Structure
+==== Disk Space Efficiency and Compaction Impact
 
-=== Write-Heavy Workload Results
-==== LSM-Tree Performance
-==== B-Tree Performance
-==== Compaction Impact
+== Scenario-Based Synthesis
 
-=== Read-Heavy Workload Results
-==== B+-Tree Performance
-==== LSM-Tree Read Amplification
-==== No Index Baseline
+=== Write-Heavy Workloads
+==== Analysis: Why LSM-Trees Dominate High-Ingestion Scenarios
 
-=== Mixed Workload Results
-==== OLTP Scenario
-==== OLAP Scenario
-==== Best Structure per Scenario
+=== Read-Heavy Workloads
+==== Analysis: B+-Tree Consistency and Cache Efficiency
 
-== Analysis
+=== Mixed Workloads (OLTP vs. OLAP)
+==== Evaluation of Tail Latencies and Throughput Stability
 
-=== Interpretation of Results
+== Summary of Strengths and Weaknesses
 
-=== Strengths and Weaknesses of Each Structure
-==== B-Tree
-==== B+-Tree
-==== LSM-Tree
-==== No Index
-
-=== Write vs Read Trade-offs
+=== Comparative Matrix of Index Structures
 
 === Application Recommendations
-==== When to Use B-Trees
-==== When to Use B+-Trees
-==== When to Use LSM-Trees
-==== When No Index is Sufficient
 
-=== Comparison with Real Database Systems
-==== Confirmed Properties
-==== Differences in Practice
-==== Why RocksDB Uses LSM
-==== Why PostgreSQL Uses B+-Trees
-==== Lessons Learned
+=== Reflection on Real Database Systems
+==== Validating PostgreSQL (B+-Tree) and RocksDB (LSM) Design Choices
 
 #pagebreak()
 
@@ -341,10 +194,7 @@
 = Appendix
 
 == Complete Benchmark Results
-// Tables with detailed measurements
 
 == JSON Schema Specifications
-// Schema definitions
 
 == Additional Figures and Tables
-// Supplementary visualizations
