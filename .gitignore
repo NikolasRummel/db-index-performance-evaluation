@@ -1,0 +1,76 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Go build artifacts
+/src/benchmark
+/src/cmd/benchmark/benchmark
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.cover
+*.coverprofile
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Typst
+thesis/build/
+*.pdf
+!thesis/references.pdf
+
+# Typst cache
+.typst-cache/
+
+# Julia
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+/Manifest.toml
+scripts/Manifest.toml
+.CondaPkg/
+
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+desktop.ini
+.Spotlight-V100
+.Trashes
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+env/
