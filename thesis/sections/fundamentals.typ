@@ -1,12 +1,31 @@
+#import "@preview/glossarium:0.5.0": gls
 
 #pagebreak()
 
 = Fundamentals
 
-== Index Structures in Database Systems
+== Motivation for Database Index Structures
+When the stored data in a #gls("DBMS") grows, it gets more and more important to efficiently queiry the data. 
+
+Imagine the szenario of a user searching for movies and series of a specific actor at Netflix. With approx 8000 titles available @statista_netflix, a scan though all titles to find the one maching the search query would take a long time. 
+
+```sql
+SELECT * FROM titles WHERE actor = 'Tom Hanks';
+```
+
+With a simple scan of the data, this query would have a performance of O(n), because in the worst case, all titles have to be checked.
+To optimize this search prozess, it would make sense to just look at titles where the actor is 'Tom Hanks'. This can be archieved by using an index structure, which allows to find the relevant data much faster.
+
+An index is a data stucture allowing to quickly locate the data we are looking for, without having to scan all the data. We can define the index on a specific attribute A, for instance on our example on the actor attribute @dbsystems_complete[S.~350]. This index will then speed up queries where A should match a specific value, like in our example above (A='Tom Hanks'). A very fast index would be a Hashmap, which could allow to find the title in O(1) time. However, which data structure is used for the index however depends on the use case and workload, which will be discussed in the following chapters.
+
+== Types of Database Index Structures
+
+As mentoned, there are different data structures which can be used as index structures in a database system. In the following, the most common index structures will be explained.
 
 
-== Search Tree-Based Index Structures
+
+
+=== Search Tree-Based Index Structures
 #let p = $p$
 In order to understand the most common data structure for DBMS, the B+-Tree @elmasri2016 [p. 618], we will start with standard search trees.
 
@@ -35,12 +54,17 @@ To determine the time complexity, the efficiency depends heavily on how the tree
 ===== Delete
 ==== Complexity Analysis
 
+//
+
 === B+-Trees
 ==== Differences from B-Trees
 ==== Advantages for Range Queries
 ==== Implementation Aspects
 
-== LSM-Trees (Log-Structured Merge Trees)
+
+//
+
+=== LSM-Trees (Log-Structured Merge Trees)
 
 === Structure and Concept
 
@@ -52,7 +76,9 @@ To determine the time complexity, the efficiency depends heavily on how the tree
 
 === Read Path and Bloom Filters
 
-=== Use Cases
+
+
+#pagebreak()
 
 == Workload Characteristics
 

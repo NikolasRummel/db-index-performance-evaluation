@@ -17,4 +17,9 @@
     short: "HTTP",
     long: "Hypertext Transfer Protocol",
   ),
+  (
+    key: "DBMS",
+    short: "DBMS",
+    long: "Database Management System",
+  ),
 )
