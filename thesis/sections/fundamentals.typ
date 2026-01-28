@@ -89,7 +89,6 @@ Now, to search for a specific key in the tree, for instance 35, we start at the 
 In our case from @unbalanced-tree, the search tree is unbalanced, meaning that not all paths from the root node to all leafes have the same length @dbsystems_complete[p. 634]. Therefore, we can see that we almost searched all nodes to find the key 35. In the worst case, the tree could basically just be a linked list, where a search would result in $O(n)$ time complexity. With this there would not be any advantage of using a search tree over kust scanning the data. In order to avoid this problem, it makes sence to use a balanced search tree.
 
 === B-Trees
-One of the most common balanced search trees used in database systems is the B-Tree @elmasri2016 [p. 620].
 
 
 === B+-Trees
