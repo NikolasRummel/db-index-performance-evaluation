@@ -2,7 +2,6 @@ package listindex
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 
 	"github.com/btree-query-bench/bmark/index"
@@ -13,7 +12,7 @@ var _ index.Index = (*ListIndex)(nil)
 
 type Data struct {
 	Key int64
-	Val int64
+	Val []byte
 }
 
 type ListIndex struct {
@@ -26,66 +25,68 @@ func NewListIndex() *ListIndex {
 	}
 }
 
-func (l *ListIndex) Insert(key, value int64) error {
-	val, i := l.search(key)
-	if val != 0 {
-		l.Data[i] = Data{
-			Key: key,
-			Val: value,
+func (l *ListIndex) Insert(key int64, value []byte) error {
+	for i := range l.Data {
+		if l.Data[i].Key == key {
+			l.Data[i].Val = value
+			return nil
 		}
-	} else {
-		l.Data = append(l.Data, Data{
-			Key: key,
-			Val: value,
-		})
 	}
+	l.Data = append(l.Data, Data{Key: key, Val: value})
 	return nil
 }
 
-func (l *ListIndex) Get(key int64) (int64, error) {
-	val, _ := l.search(key)
-	if val == 0 {
-		return 0, errors.New("could not find value based on key")
+func (l *ListIndex) Get(key int64) ([]byte, error) {
+	for _, d := range l.Data {
+		if d.Key == key {
+			return d.Val, nil
+		}
 	}
-
-	return val, nil
+	return nil, errors.New("key not found")
 }
 
 func (l *ListIndex) Delete(key int64) error {
-	val, i := l.search(key)
-
-	if val == 0 {
-		return errors.New("could not find key and therefore not delete it")
+	for i, d := range l.Data {
+		if d.Key == key {
+			l.Data = slices.Delete(l.Data, i, i+1)
+			return nil
+		}
 	}
-
-	// Deletes key/val from slice
-	l.Data = slices.Delete(l.Data, i, i)
-	return nil
+	return errors.New("key not found")
 }
 
 func (l *ListIndex) Range(start, end int64) (index.Iterator, error) {
-	panic("implement me")
+	return &ListIterator{
+		data:  l.Data,
+		cur:   -1,
+		start: start,
+		end:   end,
+	}, nil
 }
 
-func (l *ListIndex) SaveTo(path string) error {
-	return persist.Save(path, l.Data)
+func (l *ListIndex) SaveTo(path string) error   { return persist.Save(path, l.Data) }
+func (l *ListIndex) LoadFrom(path string) error { return persist.Load(path, &l.Data) }
+func (l *ListIndex) Close() error               { return nil }
+
+type ListIterator struct {
+	data  []Data
+	cur   int
+	start int64
+	end   int64
 }
 
-func (l *ListIndex) LoadFrom(path string) error {
-	return persist.Load(path, &l.Data)
-}
-
-func (l *ListIndex) search(key int64) (int64, int) {
-	for i, data := range l.Data {
-		if data.Key == key {
-			return data.Val, i
+func (it *ListIterator) Next() bool {
+	it.cur++
+	for it.cur < len(it.data) {
+		if it.data[it.cur].Key >= it.start && it.data[it.cur].Key <= it.end {
+			return true
 		}
+		it.cur++
 	}
-	return 0, -1
+	return false
 }
 
-func (l *ListIndex) Print() {
-	for _, data := range l.Data {
-		fmt.Printf("Key: %d, Value: %d\n", data.Key, data.Val)
-	}
-}
+func (it *ListIterator) Key() int64    { return it.data[it.cur].Key }
+func (it *ListIterator) Value() []byte { return it.data[it.cur].Val }
+func (it *ListIterator) Error() error  { return nil }
+func (it *ListIterator) Close() error  { return nil }

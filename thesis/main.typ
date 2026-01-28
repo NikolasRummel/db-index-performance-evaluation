@@ -24,8 +24,6 @@
   // for more options check the package documentation (https://typst.app/universe/package/clean-dhbw)
 )
 
-// Edit this content to your liking
-
 #include "sections/introduction.typ"
 #include "sections/fundamentals.typ"
 #include "sections/test.typ"

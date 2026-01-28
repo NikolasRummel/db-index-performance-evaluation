@@ -9,6 +9,8 @@
 go.work
 go.work.sum
 
+books/
+
 # Go build artifacts
 /src/benchmark
 /src/cmd/benchmark/benchmark
