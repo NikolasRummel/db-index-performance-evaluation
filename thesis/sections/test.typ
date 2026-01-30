@@ -2,7 +2,7 @@
 
 #pagebreak()
 
-= Design of the Comparison
+= Design of the Comparison <design>
 
 == Overview of the Implementation
 
@@ -50,7 +50,7 @@
 
 #pagebreak()
 
-= Evaluation and Analysis
+= Evaluation and Analysis <evaluation>
 
 == Experimental Setup
 
@@ -102,7 +102,7 @@
 
 #pagebreak()
 
-= Conclusion
+= Conclusion <conclusion>
 
 == Summary of Findings
 
@@ -112,7 +112,7 @@
 
 #pagebreak()
 
-= Outlook
+= Outlook <outlook>
 
 == Potential Extensions
 

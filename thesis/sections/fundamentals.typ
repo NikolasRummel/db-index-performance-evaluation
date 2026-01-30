@@ -3,7 +3,7 @@
 
 #pagebreak()
 
-= Fundamentals
+= Fundamentals <fundamentals>
 
 == Motivation for Database Index Structures
 When the stored data in a #gls("DBMS") grows, it gets more and more important to efficiently queiry the data. 
