@@ -24,7 +24,7 @@ An index is a data stucture allowing to quickly locate the data we are looking f
 As mentoned, there are different data structures which can be used as index structures in a database system. In the following, the most common index structures will be explained.
 
 
-=== Search Tree-Based Index Structures
+=== Search Tree-Based Index Structures <search-trees>
 #let p = $p$
 In order to understand the most common data structure for DBMS, the B+-Tree @elmasri2016 [p. 618], we will start with standard search trees. 
 
@@ -85,7 +85,8 @@ Now, to search for a specific key in the tree, for instance 35, we start at the 
 In our case from @unbalanced-tree, the search tree is unbalanced, meaning that not all paths from the root node to all leafes have the same length @dbsystems_complete[p. 634]. Therefore, we can see that we almost searched all nodes to find the key 35. In the worst case, the tree could basically just be a linked list, where a search would result in $O(n)$ time complexity. With this there would not be any advantage of using a search tree over kust scanning the data. In order to avoid this problem, it makes sence to use a balanced search tree.
 
 === B-Trees
-To ensure that a search tree stays balanced, we can use a B-Tree. A B-Tree is a self-balancing tree data structure that maintains sorted data. However, inserting and deletion of keys is more complex due to the need to maintain balance. 
+To ensure that a search tree stays balanced, we can use a B-Tree. B-Trees are search trees with some additional contraints to ensure that the tree remains balenced @elmasri2016 [p. 619].
+However, inserting and deletion of keys is more complex due to the need to maintain balance. 
 
 
 #figure(
@@ -131,12 +132,20 @@ To ensure that a search tree stays balanced, we can use a B-Tree. A B-Tree is a 
   })
 ) <balanced-tree>
 
-//TODO: Definition of B-Tree
+The constraints for a B-Tree of order $p$ are as follows @elmasri2016[p. 619] @dbsystems_complete[p. 634-635]:
+1. Like in normal search trees, we have a alternating sequence of keys and pointers in each node. However, now a B-Tree stores the values on the disc, so each entry need also a record pointer to the actual data record. This result in a Node structure of $<P_1, (K_1, "RP"_1), P_2, (K_2, "RP"_2), ..., P_(q-1), (K_(q-1), "RP"_(q-1)), P_q>$, where each $"RP"_i$ is the record pointer to the actual data record and $q <= p$.
+2. Like in @search-trees, the keys in each node are ordered such that $K_1 < K_2 < dots < K_(q-1)$ holds.
+3. All search key values $X$ within a subtree pointed by $P_i$ are bounded by the keys of the parent node. This ensures that subtrees contain only values from its parents key space. More formally, for all values $X$ in the subtree rooted at node $P_i$, the following conditions hold @elmasri2016 [p. 619]:
+  - For $1 < i < q$: $K_(i-1) < X < K_i$
+  - For $i = 1$: $X < K_i$
+  - For $i = q$: $K_(i-1) < X$
+4. To not end in a linked list in a node itself, each node has at most $p$ tree pointers.
+5. All internal nodes (except the root and leaves) have at least $ceil(p/2)$ tree pointers to ensure some kind of density to avoid wasting space. However, the root node has at least two tree pointers if it is not a leaf node meaning its the only node in the tree.
+6. All leaf nodes tree pointers $P_i$ are NULL and appear in the same level. This ensures that the tree is balanced and we get a guaranteed read performance of $O(h)$ with $h=log_p n$, where $n$ is the number of keys in the tree.
 
 
 === B+-Trees
 
-//
 
 === LSM-Trees (Log-Structured Merge Trees)
 
