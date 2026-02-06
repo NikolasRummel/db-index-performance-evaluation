@@ -243,19 +243,25 @@ The advantage now is that all leaf nodes are linked together in a linked list, a
   })
 ) <b-plus-disk-mapping>
 
-
+Todo: standard disk-based index structures such as the B-tree will effectively double the I/O cost of the
+transaction to maintain an index such as this in real time, increasing the total system cost up to
+fifty percent @lsm_original[p. 351].
 
 
 === LSM-Trees (Log-Structured Merge Trees)
+Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed for high write throughput @lsm_original[p. 351] and was originally proposed by O'Neil et al. in 1996 @lsm_original.
 
+==== LSM-Tree Structure according to O'Neil et al.
+Thhe fundamental concept of an LSM-Tree is based to batch writes together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
+This is done using a hierachy of components:
+
+- *$C_0$ Component:* This is the in-memory component where all new writes are initially stored which could use a 2-3 Tree or AVL Tree, since it doesnt neet to insist on disk page size constraints @lsm_original[p. 356]. 2-3 or AVL Trees are another type of balanced search tree, which will not be explained in detail here, but they also have a logarithmic time complexity @intro_algorithms [358], @intro_algorithms [502].
+- *$C_1$ Component:* Todo
 
 #pagebreak()
 
-== Workload Characteristics
-
-=== OLTP Scenarios
-
-=== OLAP Scenarios
+== Other variations of B-Trees
+Still research...
 
 == Index Structures in Real Database Systems
 
