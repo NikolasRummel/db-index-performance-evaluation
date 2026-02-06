@@ -108,7 +108,8 @@
 
 == Achieved Goals
 
-== Limitations
+== Critical Reflection 
+Benchmark Was IN MEMORY? -> NOT 100% FAIR, BUT STILL VALID FOR COMPARISON? 
 
 #pagebreak()
 
