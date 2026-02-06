@@ -91,6 +91,11 @@ To ensure that a search tree stays balanced, we can use a B-Tree. They where fir
 B-Trees are search trees with some additional contraints to ensure that the tree remains balenced @elmasri2016 [p. 619].
 However, inserting and deletion of keys is more complex due to the need to maintain balance. In this section, we will also describe the lookup, insertion and deletion operations in a B-Tree in a low level of detail. A detailed implementation of these will be discussed in @design. 
 
+TODO: ALSO: Complete index doesnt fit in memory!! 
+-> original paper btree 
+
+TODO2: Better Btree images, better examples with more data.
+
 
 #figure(
   caption: [Balenced version of the previous tree structure in @unbalanced-tree],
@@ -160,6 +165,84 @@ Again, deletion is most likely to be more complex than just removing the key fro
 Rangies Querys are a common operation in database systems, where we want to retrieve all keys within a specific range, for instance all titles between 'A' and 'D' @dbsystems_complete[p. 639]. For this example, we would do a lookup for the start key 'A' and then traverse the leaf nodes sequentially until we reach the end key 'D' with depth first in order walk. However, this will traverse all nodes in the range, which can be inefficient if the range is large. B+-Trees address this issue with leaf node chaining @, which will be explained in the next section.
 
 === B+-Trees
+B+-Trees are a variant of B-Trees, fixing the problem of inefficient range queries in normal B-Trees. For this reason, B+-Trees are the most commonly used index structure in database systems @elmasri2016[p. 622]. 
+The main difference between B-Trees and B+-Trees is that in B+-Trees, all data pointers are stored in the leafe nodes, resulting that internal nodes only store keys and pointers to child nodes, but no record pointers to the actual data records @elmasri2016[p. 622].
+The advantage now is that all leaf nodes are linked together in a linked list, allowing for efficient range queries by following the pointer to the next leaf node after finding the start key in the leaf node.
+
+#figure(
+  caption: [Full mapping of B+ Tree leaf nodes to physical disk blocks via Record Pointers ($"RP"$).],
+  cetz.canvas({
+    import cetz.draw: *
+
+    let node-style = (fill: white, stroke: 1pt)
+    let leaf-fill = blue.lighten(95%)
+    let disk-fill = orange.lighten(95%)
+    let edge-style = (mark: (end: "stealth", fill: black, scale: 0.5))
+    let next-pointer-style = (stroke: blue + 0.8pt, mark: (end: "stealth", fill: blue, scale: 0.5))
+    let rp-style = (stroke: gray + 0.5pt, mark: (end: "circle", fill: gray, scale: 0.2), dash: "densely-dotted")
+    
+    let leaf-page(pos, name, k1, k2) = {
+      group(name: name, {
+        // Increased width from 2.4 to 3.2
+        rect(pos, (rel: (3.2, -0.6)), fill: leaf-fill, name: "box")
+        
+        // Dividers adjusted for the new width
+        line((rel: (1.2, 0), to: pos), (rel: (1.2, -0.6), to: pos)) 
+        line((rel: (2.4, 0), to: pos), (rel: (2.4, -0.6), to: pos)) 
+        
+        // Content centered in the new wider slots
+        content((rel: (0.6, -0.3), to: pos), text(size: 8pt)[#k1, $"RP"_#k1$])
+        content((rel: (1.8, -0.3), to: pos), text(size: 8pt)[#k2, $"RP"_#k2$])
+        content((rel: (2.8, -0.3), to: pos), text(size: 8pt, fill: blue)[$P_n$])
+      })
+    }
+
+    // --- Helper function for Disk Block ---
+    let disk-block(pos, name, label) = {
+      rect(pos, (rel: (1.2, -0.5)), fill: disk-fill, name: name, radius: 0.1)
+      content(name, text(size: 7pt)[#label Data])
+    }
+
+    // --- Level 1: Internal Node ---
+    rect((-0.8, 0.5), (0.8, -0.1), ..node-style, name: "L1")
+    content("L1", [*12 | 15*])
+    
+    // --- Level 2: Leaves (Spaced out more to accommodate width) ---
+    leaf-page((-5.5, -1.5), "leaf1", "5", "10")
+    leaf-page((-1.6, -1.5), "leaf2", "12", "14")
+    leaf-page((2.3, -1.5), "leaf3", "15", "20")
+
+    // --- Level 3: The Physical Disk Layer ---
+    line((-6, -2.8), (6, -2.8), stroke: (paint: gray, thickness: 1pt, dash: "dashed"))
+    content((5.2, -2.6), text(size: 8pt, fill: gray)[Physical Disk])
+
+    disk-block((-5.0, -3.5), "d5", "Key 5")
+    disk-block((-3.6, -3.5), "d10", "Key 10")
+    disk-block((-1.8, -3.5), "d12", "Key 12")
+    disk-block((-0.4, -3.5), "d14", "Key 14")
+    disk-block((2.1, -3.5), "d15", "Key 15")
+    disk-block((3.5, -3.5), "d20", "Key 20")
+
+    // --- Connections: Tree to Leaf (Targeting center of wide leaf) ---
+    line("L1.south", (rel: (1.6, 0), to: "leaf1.north"), ..edge-style)
+    line("L1.south", (rel: (1.6, 0), to: "leaf2.north"), ..edge-style)
+    line("L1.south", (rel: (1.6, 0), to: "leaf3.north"), ..edge-style)
+
+    // --- Connections: Sequential P_next ---
+    line((rel: (2.8, -0.3), to: "leaf1.box.north-west"), (rel: (0, -0.3), to: "leaf2.box.north-west"), ..next-pointer-style)
+    line((rel: (2.8, -0.3), to: "leaf2.box.north-west"), (rel: (0, -0.3), to: "leaf3.box.north-west"), ..next-pointer-style)
+    
+
+    // --- Connections: RP to Disk ---
+    line((rel: (0.6, -0.6), to: "leaf1.box.north-west"), "d5.north", ..rp-style)
+    line((rel: (1.8, -0.6), to: "leaf1.box.north-west"), "d10.north", ..rp-style)
+    line((rel: (0.6, -0.6), to: "leaf2.box.north-west"), "d12.north", ..rp-style)
+    line((rel: (1.8, -0.6), to: "leaf2.box.north-west"), "d14.north", ..rp-style)
+    line((rel: (0.6, -0.6), to: "leaf3.box.north-west"), "d15.north", ..rp-style)
+    line((rel: (1.8, -0.6), to: "leaf3.box.north-west"), "d20.north", ..rp-style)
+  })
+) <b-plus-disk-mapping>
+
 
 
 
