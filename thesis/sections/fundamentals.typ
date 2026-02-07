@@ -253,10 +253,16 @@ Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed fo
 
 ==== LSM-Tree Structure according to O'Neil et al.
 Thhe fundamental concept of an LSM-Tree is based to batch writes together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
-This is done using a hierachy of components:
+This is done using a hierachy of components (also called trees):
 
-- *$C_0$ Component:* This is the in-memory component where all new writes are initially stored which could use a 2-3 Tree or AVL Tree, since it doesnt neet to insist on disk page size constraints @lsm_original[p. 356]. 2-3 or AVL Trees are another type of balanced search tree, which will not be explained in detail here, but they also have a logarithmic time complexity @intro_algorithms [358], @intro_algorithms [502].
-- *$C_1$ Component:* Todo
+- *$C_0$ Component:* This is the in-memory component where all new writes are initially stored which could use a 2-3 Tree or AVL Tree, since it doesnt neet to insist on disk page size constraints @lsm_original[p. 356]. 2-3 or AVL Trees are another type of balanced search tree, which will not be explained in detail here, but they also have a logarithmic time complexity @intro_algorithms [358], @intro_algorithms [502]. All new writes are first written to this component, since it is in-memory, it allows for very fast write operations. This implies two things: First, the data needs to be written to the disk ($C_1$ Component) at some point and second, the data is not savely stored in case of a crash @lsm_original[p. 355]. 
+- *$C_1$ Component:* This is now the on-disk component and larger than $C_0$. The data from $C_0$ is periodically merged into $C_1$ in a way that maintains the sorted order of the keys. The $C_1$ component is similar to a B-Tree, but optimized for sequential writes and reads with completely full nodes @lsm_original[p. 355].
+- *$C_k$ Components:* In practice, there can be multiple on-disk components ($C_k$ with $k in N$) which are periodically merged together in a similar way to maintain the sorted order and optimize for read performance @lsm_original[p. 355].
+
+As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. 
+
+*Searching* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found or all components have been searched.   
+
 
 #pagebreak()
 
