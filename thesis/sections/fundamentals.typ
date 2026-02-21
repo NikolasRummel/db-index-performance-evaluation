@@ -261,12 +261,15 @@ This is done using a hierachy of components (also called trees):
 
 As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. 
 
-*Searching* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found or all components have been searched.   
+*Searching* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found or all components have been searched. 
+
+==== Google's Bigtable and Modern LSM-Trees
 
 
 #pagebreak()
 
-== Other variations of B-Trees
+== Modern variations of B-Trees
+== Modern variations of LSM Trees
 Still research...
 
 == Index Structures in Real Database Systems

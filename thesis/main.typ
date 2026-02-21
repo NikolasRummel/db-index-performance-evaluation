@@ -26,7 +26,9 @@
 
 #include "sections/introduction.typ"
 #include "sections/fundamentals.typ"
+#include "sections/benchmark/benchmark.typ"
 #include "sections/test.typ"
+
 
 Im folgenden werden einige nützliche Elemente und Funktionen zum Erstellen von Typst-Dokumenten mit diesem Template erläutert.
 
