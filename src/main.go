@@ -1,91 +1,101 @@
 package main
 
 import (
-	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
-	"strconv"
-	"time"
+	"path/filepath"
 
-	"github.com/btree-query-bench/bmark/index"
-	"github.com/btree-query-bench/bmark/index/bplustree"
-	"github.com/btree-query-bench/bmark/index/btree"
-	"github.com/btree-query-bench/bmark/index/lsmtree"
+	"github.com/btree-query-bench/bmark/benchmark"
+	"github.com/btree-query-bench/bmark/dbms/index"
+	"github.com/btree-query-bench/bmark/dbms/index/bptree"
+	"github.com/btree-query-bench/bmark/dbms/index/btree"
+	"github.com/btree-query-bench/bmark/dbms/index/lsm"
+)
+
+const outputRoot = "results"
+
+var (
+	baseDir    = filepath.Join(outputRoot, "data")
+	resultsCSV = filepath.Join(outputRoot, "results.csv")
+	plotsDir   = filepath.Join(outputRoot, "plots")
 )
 
 func main() {
-	f, _ := os.Create("final_thesis_results.csv")
-	defer f.Close()
-	w := csv.NewWriter(f)
-	// Added HeapObjects to the header to track GC pressure
-	w.Write([]string{"Structure", "Config", "TestType", "LatencyNs", "MemMB", "HeapObjects"})
-
-	// Configuration arrays
-	degrees := []int{8, 32, 128}
-	lsmThresholds := []int{1000, 10000}
-
-	scale := 1000000
-
-	// --- 1. Sweep B-Tree & B+Tree ---
-	for _, d := range degrees {
-		runSuite(w, "B-Tree", d, btree.NewBTree(d), scale)
-		runSuite(w, "BPlusTree", d, bplustree.NewBPlusTree(d), scale)
+	if err := os.MkdirAll(outputRoot, 0755); err != nil {
+		log.Fatalf("failed to create output root: %v", err)
 	}
 
-	// --- 2. Sweep LSM ---
-	for _, t := range lsmThresholds {
-		runSuite(w, "LSM-Tree", t, lsmtree.NewLSM(t), scale)
+	if !resultsExist() {
+		fmt.Println("No results found...")
+		if err := runBenchmark(); err != nil {
+			log.Fatalf("benchmark: %v", err)
+		}
 	}
 
-	w.Flush()
-	fmt.Println("Benchmark complete. Data ready for analysis.")
+	fmt.Printf("Generating plots in %s...\n", plotsDir)
+	if err := benchmark.GeneratePlots(resultsCSV, plotsDir); err != nil {
+		log.Fatalf("plots: %v", err)
+	}
+
+	fmt.Printf("\nFinished!")
 }
 
-func runSuite(w *csv.Writer, name string, conf int, idx interface{}, n int) {
-	fmt.Printf("Testing %s (Config: %d)\n", name, conf)
-	confStr := strconv.Itoa(conf)
+func resultsExist() bool {
+	_, err := os.Stat(resultsCSV)
+	return err == nil
+}
 
-	var i index.Index
-	switch v := idx.(type) {
-	case *btree.BTree:
-		i = v
-	case *bplustree.BPlusTree:
-		i = v
-	case *lsmtree.LSMTree:
-		i = v
+func runBenchmark() error {
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
+		return err
 	}
 
-	// 1. Pure Insert (Initial Load)
-	start := time.Now()
-	for k := 0; k < n; k++ {
-		i.Insert(int64(k), []byte("v"))
+	cfg := benchmark.DefaultConfig()
+
+	if v := os.Getenv("BENCH_OPS"); v != "" {
+		var n int
+		fmt.Sscan(v, &n)
+		cfg.Ops = n
+		cfg.PreloadSize = n / 2
+		cfg.TotalWriteOps = n * 3
+		cfg.WriteWindowSize = max(n/20, 100)
+		cfg.DatasetSizes = []int{n / 10, n / 4, n / 2, n, n * 2}
+		fmt.Printf("Quick mode enabled: Ops=%d\n\n", n)
 	}
-	insertLatency := time.Since(start).Nanoseconds() / int64(n)
 
-	// --- MEMORY FOOTPRINT SAMPLING ---
-	// Measure memory immediately after load but before workloads
-	stats := GetDetailedMem()
-	Record(w, BenchResult{
-		Name:      name,
-		Config:    confStr,
-		Operation: "Footprint_SteadyState",
-		LatencyNs: insertLatency,
-		MemMB:     stats.AllocMB,
-		Objects:   stats.HeapObjects,
-	})
+	engines := []benchmark.EngineFactory{
+		{
+			Name: "btree",
+			NewFunc: func(path string) (index.Index, error) {
+				return btree.Open(path, cfg.CachePages)
+			},
+		},
+		{
+			Name: "bptree",
+			NewFunc: func(path string) (index.Index, error) {
+				return bptree.Open(path, cfg.CachePages)
+			},
+		},
+		{
+			Name: "lsm_pebble",
+			NewFunc: func(path string) (index.Index, error) {
+				if err := os.MkdirAll(path, 0755); err != nil {
+					return nil, err
+				}
+				return lsm.Open(path)
+			},
+		},
+	}
 
-	// 2. Scenario: OLTP (Read Heavy)
-	start = time.Now()
-	ExecuteWorkload(i, OLTP, n/2)
-	Record(w, BenchResult{name, confStr, "Workload_OLTP", time.Since(start).Nanoseconds() / int64(n/2), GetDetailedMem().AllocMB, 0})
+	runner := benchmark.NewRunner(cfg, engines, baseDir)
 
-	// 3. Scenario: OLAP (Write Heavy)
-	start = time.Now()
-	ExecuteWorkload(i, OLAP, n/2)
-	Record(w, BenchResult{name, confStr, "Workload_OLAP", time.Since(start).Nanoseconds() / int64(n/2), GetDetailedMem().AllocMB, 0})
+	return runner.RunAll()
+}
 
-	// 4. Basic: Range Scan
-	start = time.Now()
-	ExecuteWorkload(i, Reporting, 100)
-	Record(w, BenchResult{name, confStr, "Workload_Range", time.Since(start).Nanoseconds() / 100, GetDetailedMem().AllocMB, 0})
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

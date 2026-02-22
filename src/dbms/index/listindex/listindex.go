@@ -4,8 +4,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/btree-query-bench/bmark/index"
-	"github.com/btree-query-bench/bmark/persist"
+	"github.com/btree-query-bench/bmark/dbms/index"
 )
 
 var _ index.Index = (*ListIndex)(nil)
@@ -64,9 +63,7 @@ func (l *ListIndex) Range(start, end int64) (index.Iterator, error) {
 	}, nil
 }
 
-func (l *ListIndex) SaveTo(path string) error   { return persist.Save(path, l.Data) }
-func (l *ListIndex) LoadFrom(path string) error { return persist.Load(path, &l.Data) }
-func (l *ListIndex) Close() error               { return nil }
+func (l *ListIndex) Close() error { return nil }
 
 type ListIterator struct {
 	data  []Data
