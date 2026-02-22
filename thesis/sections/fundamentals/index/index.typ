@@ -3,7 +3,7 @@
 
 #pagebreak()
 
-= Fundamentals <fundamentals>
+= Index Structures in DBMS <index>
 
 == Motivation for Database Index Structures
 When the stored data in a #gls("DBMS") grows, it gets more and more important to efficiently queiry the data. 
@@ -248,6 +248,7 @@ transaction to maintain an index such as this in real time, increasing the total
 fifty percent @lsm_original[p. 351].
 
 
+
 === LSM-Trees (Log-Structured Merge Trees)
 Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed for high write throughput @lsm_original[p. 351] and was originally proposed by O'Neil et al. in 1996 @lsm_original.
 
@@ -264,24 +265,7 @@ As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Componen
 *Searching* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found or all components have been searched. 
 
 ==== Google's Bigtable and Modern LSM-Trees
-
+TODO: Shortly describe memtable etc, which DBMS use LSM trees? 
 
 #pagebreak()
 
-== Modern variations of B-Trees
-== Modern variations of LSM Trees
-Still research...
-
-== Index Structures in Real Database Systems
-
-=== PostgreSQL
-
-=== MySQL/InnoDB
-
-=== SQLite
-
-=== RocksDB / LevelDB
-
-=== Cassandra / ScyllaDB
-
-=== When Databases Use No Index

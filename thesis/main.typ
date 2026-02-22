@@ -25,7 +25,8 @@
 )
 
 #include "sections/introduction.typ"
-#include "sections/fundamentals.typ"
+#include "sections/fundamentals/storage/storage.typ"
+#include "sections/fundamentals/index/index.typ"
 #include "sections/benchmark/benchmark.typ"
 #include "sections/test.typ"
 
