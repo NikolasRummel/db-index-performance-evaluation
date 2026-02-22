@@ -134,10 +134,10 @@ func (t *BTree) insertRec(id uint64, key int64, vo int64, vl uint32) (int64, int
 }
 
 type slotData struct {
-	k  int64
-	vo int64
-	vl uint32
-	rc uint64
+	k  int64  // Key: The actual indexed value
+	vo int64  // Value Offset: The byte-offset in the .bv file where the data starts.
+	vl uint32 // Value Length: How many bytes to read from that offset.
+	rc uint64 // Right Child: The Page ID of the child node containing keys > k.
 }
 
 func (t *BTree) handleInsert(id uint64, p *pager.Page, n, idx int, k int64, vo int64, vl uint32, rc uint64) (int64, int64, uint32, uint64, bool, error) {
