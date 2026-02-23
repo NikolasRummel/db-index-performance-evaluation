@@ -1,3 +1,5 @@
+//More Ideashttps://www.sqlite.org/fileformat.html
+
 package btree
 
 import (

@@ -3,10 +3,11 @@
 
 = Design of the Comparison <design>
 
+== Requirements and Constraints
 
-== Implementation Specifications
+== Coding language and libraries
 
-=== Unified Interface
+== Index implementations
 
 
 #figure(
@@ -28,3 +29,18 @@
     }
 ```],
 )
+
+=== B-Tree Implementation
+
+=== B+-Tree Implementation
+
+=== LSM-Tree Implementation
+
+== Benchmark Design
+=== Workload Generation
+==== Insertion Workload
+==== Point Query Workload
+==== Range Query Workload
+==== ...
+
+

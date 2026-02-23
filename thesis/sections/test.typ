@@ -1,6 +1,3 @@
-
-#pagebreak()
-
 = Evaluation and Analysis <evaluation>
 
 == Experimental Setup
