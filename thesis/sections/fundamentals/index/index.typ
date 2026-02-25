@@ -1,7 +1,6 @@
 #import "@preview/clean-dhbw:0.3.1": *
 #import "@preview/cetz:0.4.2"
 
-#pagebreak()
 
 = Index Structures in DBMS <index>
 

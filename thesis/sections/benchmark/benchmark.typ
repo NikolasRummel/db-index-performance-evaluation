@@ -53,8 +53,16 @@ With Go being a modern language, it provides a good balance between performance 
 )
 
 === B-Tree Implementation
+==== Page structure
+==== Insertion algorithm
+==== Point query algorithm
+==== Range query algorithm
 
 === B+-Tree Implementation
+==== Page structure
+==== Insertion algorithm
+==== Point query algorithm
+==== Range query algorithm
 
 === LSM-Tree Implementation
 
