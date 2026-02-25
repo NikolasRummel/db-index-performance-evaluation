@@ -263,8 +263,6 @@ As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Componen
 
 *Searching* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found or all components have been searched. 
 
-==== Google's Bigtable and Modern LSM-Trees
-TODO: Shortly describe memtable etc, which DBMS use LSM trees? 
+*CRUD*
 
-#pagebreak()
 

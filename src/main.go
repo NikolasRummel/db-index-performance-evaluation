@@ -21,7 +21,7 @@ var (
 	plotsDir   = filepath.Join(outputRoot, "plots")
 )
 
-func main2() {
+func main() {
 	if err := os.MkdirAll(outputRoot, 0755); err != nil {
 		log.Fatalf("failed to create output root: %v", err)
 	}
@@ -90,7 +90,7 @@ func runBenchmark() error {
 
 	runner := benchmark.NewRunner(cfg, engines, baseDir)
 
-	return runner.RunRangeComparison()
+	return runner.RunAll()
 }
 
 func max(a, b int) int {

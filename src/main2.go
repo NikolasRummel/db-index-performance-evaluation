@@ -10,7 +10,7 @@ import (
 	"github.com/btree-query-bench/bmark/dbms/index/btree"
 )
 
-func main() {
+func main2() {
 	// Erstelle den Ergebnisordner, falls er nicht existiert
 	_ = os.Mkdir("results", 0755)
 

@@ -22,9 +22,19 @@
     short: "DBMS",
     long: "Database Management System",
   ),
-    (
+  (
     key: "SQL",
     short: "SQL",
     long: "Structured Query Language",
+  ),
+  (
+    key: "HDD",
+    short: "HDD",
+    long: "Hard Disk Drive",
+  ),
+  (
+    key: "SSD",
+    short: "SSD",
+    long: "Solid State Drive",
   ),
 )
