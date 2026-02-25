@@ -90,7 +90,7 @@ func runBenchmark() error {
 
 	runner := benchmark.NewRunner(cfg, engines, baseDir)
 
-	return runner.RunAll()
+	return runner.RunRangeComparison()
 }
 
 func max(a, b int) int {
