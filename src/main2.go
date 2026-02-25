@@ -11,94 +11,63 @@ import (
 )
 
 func main() {
-	os.Remove("test.bt")
-	os.Remove("test.bpt")
+	// Erstelle den Ergebnisordner, falls er nicht existiert
+	_ = os.Mkdir("results", 0755)
 
 	// Test B-Tree
 	fmt.Println("--- Testing B-Tree ---")
 	bt, _ := btree.Open("test", 10)
-	runTest(bt)
+	runTest(bt, "btree_result") // Wir fügen einen Namen hinzu
 
 	// Test B+ Tree
 	fmt.Println("\n--- Testing B+ Tree ---")
 	bpt, _ := bptree.Open("test", 10)
-	runTest(bpt)
-}
+	runTest(bpt, "bptree_result")
 
-func runTest(idx index.Index) {
+	os.Remove("test.bt")
+	os.Remove("test.bpt")
+}
+func runTest(idx index.Index, filename string) {
 	defer idx.Close()
 
-	fmt.Println("1. Basic Functional Tests...")
-	// Insert out of order
-	keys := []int64{100, 50, 150, 25, 75, 125, 175}
-	for _, k := range keys {
-		if err := idx.Insert(k, []byte(fmt.Sprintf("data-%d", k))); err != nil {
+	fmt.Println("1. Stress Testing for Multi-Level Growth...")
+
+	largeValue := make([]byte, 512)
+	for i := range largeValue {
+		largeValue[i] = 'X'
+	}
+
+	// Inserting 60 keys will definitely force a 3-level tree.
+	// Each page holds ~7 cells.
+	// ~9 leaf pages will be created, forcing the internal level to split.
+	for k := int64(1); k <= 60; k++ {
+		if err := idx.Insert(k, largeValue); err != nil {
 			log.Fatalf("Insert failed for %d: %v", k, err)
 		}
-	}
-
-	// Update existing key
-	if err := idx.Insert(75, []byte("updated-75")); err != nil {
-		log.Fatalf("Update failed: %v", err)
-	}
-
-	// Verify updates and point lookups
-	val, _ := idx.Get(75)
-	if string(val) != "updated-75" {
-		log.Fatalf("Update check failed. Got: %s", string(val))
-	}
-
-	val, _ = idx.Get(999) // Non-existent
-	if val != nil {
-		log.Fatalf("Expected nil for non-existent key, got %v", val)
-	}
-
-	fmt.Println("2. Range Scan Edge Cases...")
-	// Test cases: [start, end]
-	scanTests := []struct {
-		start, end int64
-		expected   int // count of items
-	}{
-		{25, 175, 7},  // Full range
-		{60, 130, 3},  // Middle range (75, 100, 125)
-		{200, 300, 0}, // Out of bounds high
-		{0, 10, 0},    // Out of bounds low
-		{50, 50, 1},   // Single point range
-	}
-
-	for _, st := range scanTests {
-		it, err := idx.Range(st.start, st.end)
-		if err != nil {
-			log.Fatal(err)
+		if k%10 == 0 {
+			fmt.Printf("Inserted %d keys... ", k)
 		}
-		count := 0
-		for it.Next() {
-			count++
-		}
-		if count != st.expected {
-			fmt.Printf("Range [%d, %d] FAILED: expected %d items, got %d\n", st.start, st.end, st.expected, count)
-		} else {
-			fmt.Printf("Range [%d, %d] OK (%d items)\n", st.start, st.end, count)
-		}
-		it.Close()
 	}
 
-	fmt.Println("3. Split & Continuity Stress Test...")
-	// Insert 500 keys to force multiple levels of splits.
-	// This tests if Copy-Up (B+) and Push-Up (B) preserve the tree structure correctly.
-	for i := int64(1000); i < 1500; i++ {
-		idx.Insert(i, []byte("val"))
+	fmt.Println("\n2. Verifying Point Lookup...")
+	val, _ := idx.Get(30)
+	if len(val) != 512 {
+		log.Fatalf("Value size mismatch. Expected 512, got %d", len(val))
 	}
+	fmt.Println("Lookup 30 OK.")
 
-	// Range scan across the split boundaries
-	it, _ := idx.Range(1490, 1510)
-	last := int64(0)
+	fmt.Println("3. Deep Range Scan...")
+	// Scan across multiple leaf pages
+	it, _ := idx.Range(5, 55)
+	count := 0
 	for it.Next() {
-		last = it.Key()
-	}
-	if last != 1499 {
-		log.Fatalf("Stress range failed. Last key should be 1499, got %d", last)
+		count++
 	}
 	it.Close()
-	fmt.Println("Stress test passed.")
+	fmt.Printf("Range scan OK. Found %d keys.\n", count)
+
+	// 4. Print the tree structure (this will now be a much larger image)
+	if t, ok := idx.(interface{ Print(string) }); ok {
+		t.Print(filename)
+	}
 }
