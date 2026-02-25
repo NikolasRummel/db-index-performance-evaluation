@@ -18,7 +18,6 @@ The benchmark will be designed to evaluate the performance of these index struct
 + Write throughput over time: measuring how the write throughput changes as the index structures grow.
 + Mixed workload: simulating a realistic scenario with a mix of insertions and queries.
 + Memory usage: measuring the memory footprint of each index structure.
-+ Disk space usage: measuring the disk space consumed by each index structure.
 
 
 == Coding language used for Implementation

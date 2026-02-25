@@ -21,7 +21,7 @@ var (
 	plotsDir   = filepath.Join(outputRoot, "plots")
 )
 
-func main() {
+func main2() {
 	if err := os.MkdirAll(outputRoot, 0755); err != nil {
 		log.Fatalf("failed to create output root: %v", err)
 	}
