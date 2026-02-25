@@ -157,6 +157,13 @@ Inside of the actual storage, the data is written in flash cells, which are the 
 To now read a page, we have a constant access time even though the data can be stored anywhere. This is called random access @os[p. 3] and is the key advantage of #gls("SSD") over #gls("HDD"). However, writing to a #gls("SSD") is more complex. Due to the nature of flash memory, data cannot be overwritten in place. Instead, an entire block must be erased before new data can be written, which leads to increased latency for write operations and can cause performance degradation over time as the drive fills up @os[p. 3]. To mitigate this issue, #gls("SSD") use techniques like wear leveling and garbage collection to manage the flash memory and maintain performance @os[p. 3-4].
 
 === Buffer Management 
+In order to speed up data acces, the goal of a #gls("DBMS") is to keep as much data as possible in main memory, since access to main memory is much faster than access to secondary storage (see @memory-pyramid).
 
+The Buffer Manager is now responsible for smartly managing the most important data in the main memory to speedup query performance. In real #gls("DBMS"), the buffer manager holds a pool of pages in main memory, which are used to cache data from disk @elmasri2016[p. 557]. Since the main memory is limited, the buffer manager needs to decide which pages to keep in memory and which pages to evict when new pages need to be loaded. This is done using buffer replacement policies, which determine which page to evict based on factors such as recency of access, frequency of access, and the cost of reloading the page from disk @elmasri2016[p. 559].
 
-==== Buffer Replacement Policies
+==== Common Buffer Replacement Policies
+- *Least Recently Used (LRU)*: Evicts the page that has not been accessed for the longest time.
+- *Most Recently Used (MRU)*: Evicts the page that was accessed most recently
+- *First-In, First-Out (FIFO)*: Evicts the page that has been in the buffer pool the longest.
+- *Clock*: A more efficient approximation of LRU that uses a circular buffer and a reference
+
