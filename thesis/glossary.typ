@@ -22,4 +22,9 @@
     short: "DBMS",
     long: "Database Management System",
   ),
+    (
+    key: "SQL",
+    short: "SQL",
+    long: "Structured Query Language",
+  ),
 )
