@@ -23,6 +23,9 @@ An index is a data stucture allowing to quickly locate the data we are looking f
 As mentoned, there are different data structures which can be used as index structures in a database system. In the following, the most common index structures will be explained.
 
 
+=== Primary, Secondary and Clustered Indexes?
+
+
 === Search Tree-Based Index Structures <search-trees>
 #let p = $p$
 In order to understand the most common data structure for DBMS, the B+-Tree @elmasri2016 [p. 618], we will start with standard search trees. 
@@ -85,7 +88,7 @@ Now, to search for a specific key in the tree, for instance 35, we start at the 
 
 In our case from @unbalanced-tree, the search tree is unbalanced, meaning that not all paths from the root node to all leafes have the same length @dbsystems_complete[p. 634]. Therefore, we can see that we almost searched all nodes to find the key 35. In the worst case, the tree could basically just be a linked list, where a search would result in $O(n)$ time complexity. With this there would not be any advantage of using a search tree over kust scanning the data. In order to avoid this problem, it makes sence to use a balanced search tree.
 
-=== B-Trees
+=== B-Trees <btree>
 To ensure that a search tree stays balanced, we can use a B-Tree. They where first described by Bayer and McCreight in 1972 @btree_original and are widely used in database systems both releational and non-relational @kleppmann[p. 80].
 B-Trees are search trees with some additional contraints to ensure that the tree remains balenced @elmasri2016 [p. 619].
 However, inserting and deletion of keys is more complex due to the need to maintain balance. In this section, we will also describe the lookup, insertion and deletion operations in a B-Tree in a low level of detail. A detailed implementation of these will be discussed in @design. 
