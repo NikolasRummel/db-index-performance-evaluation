@@ -195,4 +195,4 @@ This architecture is essential for efficiently managing variable-length records 
 === Summary
 Understanding the physical limitations of storage media is fundamental to database design. While the Buffer Manager attempts to mask disk latency by caching data, the underlying organization of data into pages remains a critical factor in performance. 
 
-In the following chapter, we will build upon these concepts to explore how *Index Structures* utilize this page-based storage to provide logarithmic search performance, transforming what would otherwise be expensive full-table scans into efficient, targeted data retrievals.
+In the following chapter, we will build upon these concepts to explore how Index Structures utilize this page-based storage to provide logarithmic search performance, transforming what would otherwise be expensive full-table scans into efficient lookups.
