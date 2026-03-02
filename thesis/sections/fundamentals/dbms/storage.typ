@@ -165,5 +165,34 @@ The Buffer Manager is now responsible for smartly managing the most important da
 - *Least Recently Used (LRU)*: Evicts the page that has not been accessed for the longest time.
 - *Most Recently Used (MRU)*: Evicts the page that was accessed most recently
 - *First-In, First-Out (FIFO)*: Evicts the page that has been in the buffer pool the longest.
-- *Clock*: A more efficient approximation of LRU that uses a circular buffer and a reference
+- *Clock*: Evicts the page that has been accessed least recently, but uses a circular buffer and a "use" bit to track page usage.
 
+
+=== Data Organization: The Slotted Page Model
+As previously mentioned, the #gls("DBMS") interacts with the storage layer in fixed-size units called pages (typically 4 KB). However, the data stored within these pages, such as database rows or index entries, often has a variable size. Names for instance don't have the same length, and to not waste space, the #gls("DBMS") needs to be able to manage variable-length records within a fixed-size page.
+
+To manage this efficiently, the Slotted Page Model is used TODO cite. 
+In this model, a page is divided into three main sections:
+1. *Header:* Contains metadata such as the page ID, the number of slots, and a pointer to the start of free space.
+2. *Slot Directory:* An array of pointers (offsets) located at the front of the page that track the starting location of each record.
+3. *Data Area:* The actual records, which are typically inserted from the end of the page moving backwards toward the header.
+
+#figure(
+  rect(width: 60%, height: 4cm, stroke: 0.5pt, fill: luma(250))[
+    #set align(center + horizon)
+    #grid(
+      rows: (1fr, 1fr, 3fr),
+      rect(width: 100%, fill: gray.lighten(50%))[Page Header],
+      rect(width: 100%, fill: gray.lighten(80%))[Slot Directory (Pointers)],
+      rect(width: 100%)[Free Space / Records (Slotted Data)]
+    )
+  ],
+  caption: [The Slotted Page Architecture used for internal page organization.],
+) <fig-slotted-page>
+
+This architecture is essential for efficiently managing variable-length records within fixed-size pages, allowing the #gls("DBMS") to optimize storage utilization and access patterns while maintaining the necessary metadata for record management.
+
+=== Summary
+Understanding the physical limitations of storage media—specifically the "Storage Gap" between volatile RAM and persistent SSDs—is fundamental to database design. While the Buffer Manager attempts to mask disk latency by caching hot data, the underlying organization of data into pages remains the atomic unit of I/O. 
+
+In the following chapter, we will build upon these concepts to explore how **Index Structures** utilize this page-based storage to provide logarithmic search performance, transforming what would otherwise be expensive full-table scans into efficient, targeted data retrievals.
