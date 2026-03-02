@@ -193,6 +193,6 @@ In this model, a page is divided into three main sections:
 This architecture is essential for efficiently managing variable-length records within fixed-size pages, allowing the #gls("DBMS") to optimize storage utilization and access patterns while maintaining the necessary metadata for record management.
 
 === Summary
-Understanding the physical limitations of storage media—specifically the "Storage Gap" between volatile RAM and persistent SSDs—is fundamental to database design. While the Buffer Manager attempts to mask disk latency by caching hot data, the underlying organization of data into pages remains the atomic unit of I/O. 
+Understanding the physical limitations of storage media is fundamental to database design. While the Buffer Manager attempts to mask disk latency by caching data, the underlying organization of data into pages remains a critical factor in performance. 
 
-In the following chapter, we will build upon these concepts to explore how **Index Structures** utilize this page-based storage to provide logarithmic search performance, transforming what would otherwise be expensive full-table scans into efficient, targeted data retrievals.
+In the following chapter, we will build upon these concepts to explore how *Index Structures* utilize this page-based storage to provide logarithmic search performance, transforming what would otherwise be expensive full-table scans into efficient, targeted data retrievals.
