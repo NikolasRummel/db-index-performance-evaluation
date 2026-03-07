@@ -1,8 +1,5 @@
 #import "@preview/clean-dhbw:0.3.1": *
 #import "@preview/cetz:0.4.2"
-
-TODO: Section about Use cases OLTP, OLAP, WRITE HEAVY, READ HEAVY!
-
 = Design and Implementation <design>
 
 The goal of this chapter is to describe the design of the benchmark and the implementation of the storage manager, index structures and some highlights on the benchmark itself. The benchmark will be designed to evaluate the performance of different index structures under various workloads, and the implementation will be done in Go programming language.
@@ -96,12 +93,9 @@ With Go being a modern language, it provides a good balance between performance 
 
 === Libraries
 ==== LSM-Tree Implementation
-Pepple 
+Pepple  Todo
 ==== Plotting and Visualization
-Gonum 
-
-
-
+Gonum Todo
 
 == Architectural Overview
 #figure(caption: "Component Diagramm of the Benchmark", image(width: 4cm, "../../assets/comp.jpeg"))

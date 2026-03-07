@@ -1,7 +1,5 @@
 #import "@preview/clean-dhbw:0.3.1": *
 
-#pagebreak()
-
 = Overview DBMS <dbms>
 
 #align(right)[
@@ -21,7 +19,7 @@ To understand index structures and their implementation in a #gls("DBMS"), one m
 
 TODO: Some components are missing - Query Optimizer e.g.
 Also Users dont interact with transaction manager directly, but rather with the query processor etc
-
+Maybe use other figure? Maybe the one from elmasri?
 
 == Query Processing and Data Definition 
 As an entry point for users and database administrators, they can use specific languages to interact with the #gls("DBMS"). The *DDL Compiler* processes data definition statements, which are used to define the database schema, including tables, indexes, and other database objects. For end users, the *Query Processor* is responsible for data manipulation and retrieval. 

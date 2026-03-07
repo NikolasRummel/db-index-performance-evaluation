@@ -72,7 +72,7 @@ There are different types of storage media that one can use, each having differe
   })
 ) <memory-pyramid>
 
-So one might think that the best choice would be to use the fastest storage media available, but this is not the case. The amout of registers, caches (and the main memory) is very limited and expensive and not big enough for a typical database usecase @elmasri2016[p. 542]. In attition the data is volatile, meaning after some power outage or system crash, the data would be lost @elmasri2016[p. 542], what we dont want for a database. Therefore, we need to use persistent storage media like  a #gls("HDD") and since the 2010s? TODO CITE especially #gls("SSD").  
+So one might think that the best choice would be to use the fastest storage media available, but this is not the case. The amout of registers, caches (and the main memory) is very limited and expensive and not big enough for a typical database usecase @elmasri2016[p. 542]. In attition the data is volatile, meaning after some power outage or system crash, the data would be lost @elmasri2016[p. 542], what we dont want for a database. Therefore, we need to use persistent storage media like a #gls("HDD") and nowadays especially #gls("SSD").  
 
 In the following, we will briefly describe the characteristics of these storage media to understand further in the index chapter. 
 
@@ -82,10 +82,10 @@ A #gls("HDD") has multiple discs which hold data and a read/write head that move
 
 #figure(
   image("../../../assets/hdd.png", width: 50%),
-  caption: [A schematic of a hard disk drive], 
+  caption: [A schematic of a hard disk drive],
 ) <hdd-schematic>
 
-On each of those discs, data is organized in concentric circles called tracks, which are further divided into sectors. And overlap of sector and track is called block, which often is also called page TODO: CITE.  The read/write head moves to the appropriate track and sector to read or write data. The performance of a #gls("HDD") is influenced by factors such as seek time (the time it takes for the head to move to the correct track), rotational latency (the time it takes for the desired sector to rotate under the head), and transfer rate (the speed at which data can be read or written once the head is in position) @elmasri2016[p. 547]. In total the access time can be calculated as follows:
+On each of those discs, data is organized in concentric circles called tracks, which are further divided into sectors. And overlap of sector and track is called block, which often is also called page @elmasri2016[p. 549].  The read/write head moves to the appropriate track and sector to read or write data. The performance of a #gls("HDD") is influenced by factors such as seek time (the time it takes for the head to move to the correct track), rotational latency (the time it takes for the desired sector to rotate under the head), and transfer rate (the speed at which data can be read or written once the head is in position) @elmasri2016[p. 547]. In total the access time can be calculated as follows:
 $$
 $ T_(a c c e s s) = T_(s e e k) + T_(r o t) + T_(t r a n s f e r) $
 $$
@@ -171,7 +171,7 @@ The Buffer Manager is now responsible for smartly managing the most important da
 === Data Organization: The Slotted Page Model
 As previously mentioned, the #gls("DBMS") interacts with the storage layer in fixed-size units called pages (typically 4 KB). However, the data stored within these pages, such as database rows or index entries, often has a variable size. Names for instance don't have the same length, and to not waste space, the #gls("DBMS") needs to be able to manage variable-length records within a fixed-size page.
 
-To manage this efficiently, the Slotted Page Model is used TODO cite. 
+To manage this efficiently, the Slotted Page Model is used @mssql_pages. 
 In this model, a page is divided into three main sections:
 1. *Header:* Contains metadata such as the page ID, the number of slots, and a pointer to the start of free space.
 2. *Slot Directory:* An array of pointers (offsets) located at the front of the page that track the starting location of each record.
