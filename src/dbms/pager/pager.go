@@ -154,19 +154,17 @@ func (p *Pager) writePageCount() error {
 }
 
 // ─── LRU Cache ────────────────────────────────────────────────────────────────
-
 type lruEntry struct {
-	id   uint64
-	page *Page
-	prev *lruEntry
-	next *lruEntry
+	id   uint64    // Unique identifier of the page
+	page *Page     // Pointer to the cached page content
+	prev *lruEntry // Pointer to the more recently used entry
+	next *lruEntry // Pointer to the less recently used entry
 }
-
 type lruCache struct {
-	cap   int
-	items map[uint64]*lruEntry
-	head  *lruEntry // most recent
-	tail  *lruEntry // least recent
+	cap   int                  // Maximum number of pages the cache can hold
+	items map[uint64]*lruEntry // Fast O(1) lookup map from page ID to list node
+	head  *lruEntry            // Pointer to the MRU (Most Recently Used) node
+	tail  *lruEntry            // Pointer to the LRU (Least Recently Used) node
 }
 
 func newLRUCache(cap int) *lruCache {
