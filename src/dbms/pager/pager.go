@@ -160,11 +160,12 @@ type lruEntry struct {
 	prev *lruEntry // Pointer to the more recently used entry
 	next *lruEntry // Pointer to the less recently used entry
 }
+
 type lruCache struct {
-	cap   int                  // Maximum number of pages the cache can hold
-	items map[uint64]*lruEntry // Fast O(1) lookup map from page ID to list node
-	head  *lruEntry            // Pointer to the MRU (Most Recently Used) node
-	tail  *lruEntry            // Pointer to the LRU (Least Recently Used) node
+	cap   int                  // Max number of pages in cache
+	items map[uint64]*lruEntry // Fast O(1) lookup map
+	head  *lruEntry            // Pointer to the MRU node
+	tail  *lruEntry            // Pointer to the LRU node
 }
 
 func newLRUCache(cap int) *lruCache {
