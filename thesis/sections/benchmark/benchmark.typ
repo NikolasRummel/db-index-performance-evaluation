@@ -1,5 +1,6 @@
 #import "@preview/clean-dhbw:0.3.1": *
 #import "@preview/cetz:0.4.2"
+
 = Design and Implementation <design>
 
 The goal of this chapter is to describe the design of the benchmark and the implementation of the storage manager, index structures and some highlights on the benchmark itself. The benchmark will be designed to evaluate the performance of different index structures under various workloads, and the implementation will be done in Go programming language.
@@ -261,6 +262,13 @@ In order to compare the performance of the three indexes, a common interface wil
 Here, we use a simplified key value record where the key is an int64 and the value an actual bytle slice/array. Usually, the key would be a complex data type to not only support integer keys but also strings or other. Hovewer, for the sake of simplicity of this work, we will stick to this simplified soliution.
 
 === Generic Tree Implementation
+Since both the B-Tree and the B+-Tree have a lot of similarities in their implementation, a generic tree structure will be implemented that can be used for both index structures. This will allow for code reuse and a easier implementation of the two index structures where as storage specific details like the structure of the nodes will be implemented in the according B-Tree implemenations.
+
+To implement this generically, the strategy pattern @strategy will be used where each B-Tree implements its specific logic (strategy) for operations like the range query. In a normal B-Tree, the range query would need to traverse both internal and leaf nodes, while in a B+-Tree, the range query would only need to traverse the linked leaf nodes. By using the strategy pattern, we can implement the common logic for both index structures in the generic tree implementation and then implement the specific logic for each index structure in their respective implementations.
+
+#figure(caption: "Strategy pattern for tree implementations", image(width: 70%, "../../assets/tree_strategy.svg"))
+
+Here, the NodeAccessor interface defines the common operations which are different in the specific tree implementations. 
 
 
 ==== Insertion algorithm
