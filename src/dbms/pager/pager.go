@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	PageSize    = 4096 // 4 KB — matches OS page size
-	InvalidPage = ^uint64(0)
+	PageSize = 4096 // 4 KB pages
 )
 
 // Page is a raw 4 KB block read from or written to disk.
@@ -26,7 +25,7 @@ type Pager struct {
 func Open(path string, cacheSize int) (*Pager, error) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("pager open: %w", err)
+		return nil, fmt.Errorf("opening pager file: %w", err)
 	}
 
 	p := &Pager{
@@ -34,26 +33,43 @@ func Open(path string, cacheSize int) (*Pager, error) {
 		cache: newLRUCache(cacheSize),
 	}
 
-	// Read the page count from the file header (first 8 bytes of page 0).
-	// If the file is brand new, pageCount starts at 1 (page 0 is the header).
-	info, err := f.Stat()
+	exists, err := p.fileExists()
 	if err != nil {
+		f.Close()
 		return nil, err
 	}
-	if info.Size() == 0 {
-		p.pageCount = 1
-		if err := p.writePageCount(); err != nil {
-			return nil, err
+
+	if exists {
+		if err := p.readPageCount(); err != nil {
+			f.Close()
+			return nil, fmt.Errorf("read page count: %w", err)
 		}
 	} else {
-		pg, err := p.readPageFromDisk(0)
-		if err != nil {
-			return nil, fmt.Errorf("pager: read header: %w", err)
+		p.pageCount = 1
+		if err := p.writePageCount(); err != nil {
+			f.Close()
+			return nil, fmt.Errorf("write page count: %w", err)
 		}
-		p.pageCount = binary.LittleEndian.Uint64(pg[:8])
 	}
 
 	return p, nil
+}
+
+func (p *Pager) fileExists() (bool, error) {
+	info, err := p.file.Stat()
+	if err != nil {
+		return false, fmt.Errorf("stat file: %w", err)
+	}
+	return info.Size() > 0, nil
+}
+
+func (p *Pager) readPageCount() error {
+	pg, err := p.readPageFromDisk(0)
+	if err != nil {
+		return err
+	}
+	p.pageCount = binary.LittleEndian.Uint64(pg[:8])
+	return nil
 }
 
 // Allocate reserves a new page on disk and returns its page ID.
