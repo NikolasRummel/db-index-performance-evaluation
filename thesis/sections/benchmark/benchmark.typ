@@ -165,9 +165,76 @@ Gonum Todo
   })
 ) <fig-component-arch-fixed>
 
-== Storage Manager Implementation
-=== Pager 
-=== LRU Cache 
+== Buffer Manager Implementation
+
+The Pager component is responsible for managing the I/O operations to the disk. It provides a Read and Write API for the upcoming index implementations to read and write pages to the disk. 
+Also, an Open() function will be used to initialize a file with a page (Page 0) for storing metadata. This will be used to track the pageCount.
+#figure(
+  caption: "Simplified Open() function of the Pager component.",
+  sourcecode[```go
+func Open(path string, cacheSize int) (*Pager, error) {
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
+
+	p := &Pager{
+		file:  f,
+		cache: newLRUCache(cacheSize),
+	}
+
+	exists, err := p.fileExists()
+
+	if exists {
+		p.readPageCount()
+	} else {
+		p.pageCount = 1
+		p.writePageCount()
+	}
+
+	return p, nil
+}
+```],
+)
+
+The pager also implements a cache to optimize the read and write operations. For this, we use a doubly linked list of pages which is used to implement a simple LRU cache. When a page is read from the disk, it is added to the front of the list and when a page is written to the disk, it is also added to the front of the list. If the cache is full, the least recently used page (the one at the end of the list) is evicted from the cache and written to the disk if it has been modified.
+
+#figure(
+  caption: "Datastructure of the LRU Cache.",
+  sourcecode[```go
+type lruEntry struct {
+    id   uint64      // Unique identifier of the page
+    page *Page       // Pointer to the cached page content
+    prev *lruEntry   // Pointer to the more recently used entry
+    next *lruEntry   // Pointer to the less recently used entry
+}
+
+type lruCache struct {
+    cap   int                    // Max number of pages in cache
+    items map[uint64]*lruEntry   // Fast O(1) lookup map 
+    head  *lruEntry              // Pointer to the MRU node
+    tail  *lruEntry              // Pointer to the LRU node
+}
+```],
+)
+
+The detailied implementation can be found in the source code, but with this idea, the pager component now can use this cache e.g for its Read() function to first checks if the page is in the cache or if it needs to be read from the disk: 
+#figure(
+  caption: "Read() function of the Pager component using the LRU cache.",
+  sourcecode[```go
+func (p *Pager) Read(id uint64) (*Page, error) {
+	if pg := p.cache.get(id); pg != nil {
+		return pg, nil
+	}
+	pg, err := p.readPageFromDisk(id)
+	if err != nil {
+		return nil, err
+	}
+	p.cache.put(id, pg)
+	return pg, nil
+}
+
+```],
+)
+
+Now that we have a simple buffer manager implemented, we can use it for the implementation of the index structures. 
 
 == Index implementations
 In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for a easy comparison of the different index structures under the same workloads and conditions. The interface will include normal CRUD operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
