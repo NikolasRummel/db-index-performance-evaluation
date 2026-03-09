@@ -164,8 +164,13 @@ Gonum Todo
     line((10.25, 0.8), (10.25, 0), mark: (end: "stealth"))
   })
 ) <fig-component-arch-fixed>
-== Index implementations
 
+== Storage Manager Implementation
+=== Pager 
+=== LRU Cache 
+
+== Index implementations
+In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for a easy comparison of the different index structures under the same workloads and conditions. The interface will include normal CRUD operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
 #figure(
   caption: "Ein Stück Quellcode",
   sourcecode[```go
@@ -186,11 +191,11 @@ Gonum Todo
 ```],
 )
 
-== Storage Manager Implementation
-=== Pager 
-=== LRU Cache 
+Here, we use a simplified key value record where the key is an int64 and the value an actual bytle slice/array. Usually, the key would be a complex data type to not only support integer keys but also strings or other. Hovewer, for the sake of simplicity of this work, we will stick to this simplified soliution.
 
 === Generic Tree Implementation
+
+
 ==== Insertion algorithm
 ==== Point query algorithm
 ==== Range query algorithm
