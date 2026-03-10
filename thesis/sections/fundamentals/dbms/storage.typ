@@ -144,7 +144,7 @@ Data is then read or written in blocks/ pages, which are typically 4KB in size @
 */
 
 === Solid State Drives
-On the other side,, #gls("SSD") use semiconductor-based NAND flash memory. Because they lack mechanical components, the physical constraints of seek time ($T_(s e e k)$) and rotational latency ($T_(r o t)$) are eliminated. Instead, performance is determined by electrical signal propagation and the efficiency of the internal controller.
+On the other side, #gls("SSD") use semiconductor-based NAND flash memory. Because they lack mechanical components, the physical constraints of seek time ($T_(s e e k)$) and rotational latency ($T_(r o t)$) are eliminated. Instead, performance is determined by electrical signal propagation and the efficiency of the internal controller.
 #figure(
   image("../../../assets/ssd.png", width: 70%),
   caption: [A schematic of a solid state drive @ssd], 
@@ -192,9 +192,9 @@ In this model, a page is divided into three main sections:
   caption: [The Slotted Page Architecture used for internal page organization.],
 ) <fig-slotted-page>
 
-This architecture is essential for efficiently managing variable-length records within fixed-size pages, allowing the #gls("DBMS") to optimize storage utilization and access patterns while maintaining the necessary metadata for record management.
+This architecture is essential for efficiently managing variable-length records within fixed-size pages, allowing the #gls("DBMS") to optimize storage utilization and access patterns while maintaining the necessary metadata for record management. 
 
 === Summary
 Understanding the physical limitations of storage media is fundamental to database design. While the Buffer Manager attempts to mask disk latency by caching data, the underlying organization of data into pages remains a critical factor in performance. 
 
-In the following chapter, we will build upon these concepts to explore how Index Structures utilize this page-based storage to provide logarithmic search performance, transforming what would otherwise be expensive full-table scans into efficient lookups.
+In the following chapter, we will build upon these concepts to explore how index structures utilize this page-based storage to provide logarithmic search performance, what makes it much more efficient then full-table scans.

@@ -84,9 +84,6 @@ The candidate languages were scored from 1 (lowest) to 5 (highest) based on the 
   [*Total Score*], [1.00], [3.65], [3.45], [3.25], [*4.55*], [3.20],
 )
 
-TODO: Change values
-
-
 ==== Result
 For this project, the Go programming language was choosen for the implementation of the index structures and the benchmark. 
 Inspired by the C programming language, Go is a statically typed, compiled language that however also provides high-level features like garbage collection and built-in support for concurrency @golang[preface p. xii] @godocs. Go was created by Google since they were dealing more and more with complex software systems @golang[preface p. xiiii] and now is widely used in the industry #footnote[https://survey.stackoverflow.co/2025/technology#most-popular-technologies-language]. 
@@ -441,5 +438,4 @@ In the benchmark we will see how much faster this approach is for range queries 
 ==== T3: Write throughput over time
 ==== T4: Mixed workload
 ==== T5: Memory usage
-
-== Generating reports and visualizations
+=== Generating plots and visualizations

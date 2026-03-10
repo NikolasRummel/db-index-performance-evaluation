@@ -245,7 +245,7 @@ The advantage now is that all leaf nodes are linked together in a linked list, a
   })
 ) <b-plus-disk-mapping>
 
-Todo: standard disk-based index structures such as the B-tree will effectively double the I/O cost of the
+Todo? Drawback: standard disk-based index structures such as the B-tree will effectively double the I/O cost of the
 transaction to maintain an index such as this in real time, increasing the total system cost up to
 fifty percent @lsm_original[p. 351].
 
