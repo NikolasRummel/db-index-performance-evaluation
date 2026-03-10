@@ -106,7 +106,6 @@ func Open(path string, cachePages int) (*BPTree, error) {
 }
 
 func (t *BPTree) Get(key int64) ([]byte, error) {
-	// B+-tree Get: descend to leaf, then check there.
 	leafID, err := t.FindLeaf(key)
 	if err != nil {
 		return nil, err

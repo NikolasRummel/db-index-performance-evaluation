@@ -290,12 +290,14 @@ Therefore, the page layout will consist of a header, a cell pointer array and a 
     [`[1–2]`],    [2 bytes],       [`numCells`],         [Number of cells currently stored on this page],
     [`[3–4]`],    [2 bytes],       [`cellContentStart`], [Absolute offset to the top of the cell content area; initialised to `4096` (`PageSize`)],
     [`[5–8]`],    [4 bytes],       [`rightmost`],        [Page ID of the rightmost child pointer (internal pages only); unused on leaves],
-    [`[9–12]`],   [4 bytes],       [`nextLeaf`],         [Page ID of the next leaf in linked list (B+ tree leaves only; `0xFFFFFFFF` = none],
+    [`[9–12]`],   [4 bytes],       [`nextLeaf`],         [Page ID of the next leaf in linked list (B+ tree leaves only)],
     [`[13+]`],    [2 bytes × `n`], [`cellPtrs[]`],       [Cell pointer array — one `uint16` absolute page offset per cell; grows downward into free space],
     [`[varies]`], [—],             [_(free space)_],     [Unused bytes between the end of `cellPtrs[]` and `cellContentStart`],
     [`[varies]`], [—],             [_(cell content)_],   [Cell bytes allocated by `AllocCell`; each cell starts at the offset stored in its `cellPtrs` entry. Grows upward from `4096` toward the header],
   ),
 )<page-layout>
+
+_Note: In a real implementation, the page layout would need to be designed in more detail, especially because the current header unconditionally reserves four bytes for nextLeaf on every page regardless of tree type, and lacks free block tracking, meaning fragmented space from deleted cells cannot be reclaimed without a full page rewrite._
 
 ==== B-tree Cell Format
 Now, the individual cell layout can be designed. Since in a B-Tree there is no difference between internal and leaf nodes, the same cell format will be used. Here, we need to store the child pointer for the left child subtree and then the actual key-value pair. Since the value can be of any length, we also need to store the length of the value in order to know how many bytes to read for the value.
@@ -348,13 +350,87 @@ In the B+-Tree on the other hand there are as we saw at @b-plus-disk-mapping the
   )
 )
 
+=== B-Tree and B+-Tree implementation highlights
+In the following pseudocode of the implementation will be shown to give an idea of how the actual implementation looks like and to show some of the differences between the two index structures. The actual implementation can be found in the source code, but here we will focus on the Get() operation and the range query implementation since these are the most interesting operations to compare between the two index structures.
 
-==== Insertion algorithm
-==== Point query algorithm
-==== Range query algorithm
+==== Get() Operation
+#figure(
+  caption: "Get() pseudocode for B-Tree (left) and B+-Tree (right)",
+  grid(
+    columns: (1fr, 1fr),
+    gutter: 1em,
+    sourcecode[```js
+curr ← RootID
+while curr != NIL:
+  p    ← readPage(curr)
+  n    ← getNumCells(p)
+  idx  ← binarySearch(p, key)
+  
+  if idx < n and p[idx].key == key:
+    return p[idx].value
+    
+  if isLeaf(p):
+    return NIL
+    
+  curr ← getChildPointer(p, idx)
+```],
+    sourcecode[```js
+curr ← RootID
+while !isLeaf(curr):
+  p    ← readPage(curr)
+  idx  ← binarySearch(p, key)
+  curr ← getChildPointer(p, idx)
 
-=== B-Tree Implementation
-=== B+-Tree Implementation
+leaf ← readPage(curr)
+idx  ← binarySearch(leaf, key)
+
+if idx < getNumCells(leaf) 
+  && leaf[idx].key == key:
+    return leaf[idx].value
+
+return NIL
+```],
+  )
+)
+
+Here, the B-Tree checks every node for the key since internal nodes also store values. We start at the root node and search for the key. If we can find it in the current node (curr), we can return the value. If not we go to the subtree with via the childPointer. If we reach the leaf and still did not found the key, we return NIL since the key does not exist in the tree. 
+
+The B+-Tree on the other hand first needs to find the leaf node where the key would be stored and then search for the key in the leaf node by following the child pointers until we reach a leaf node. Once we are at the leaf node, we search for the key and return the value if we find it, otherwise we return NIL.
+==== Range Query
+
+#figure(
+  caption: "Range Next() pseudocode for B-Tree (left) and B+-Tree (right)",
+  grid(
+    columns: (1fr, 1fr),
+    gutter: 1em,
+    sourcecode[```js
+loop:
+  if !top.done:
+    push(leftChild(top[idx]))
+    top.done ← true
+  elif idx < len(top):
+    emit top[idx++]
+    push(rightChild(top[idx-1]))
+  else:
+    pop()
+```],
+    sourcecode[```js
+loop:
+  if idx < len(leaf):
+    emit leaf[idx++]
+  else:
+    leaf ← leaf.nextLeaf
+    idx  ← 0
+```],
+  )
+)
+
+The Next() function for the B-Tree is more complex since we need to traverse both internal and leaf nodes. We are doing a in-order traversal of the tree where we first visit the left child, then emit the current node and then visit the right child. We use a stack to keep track of the nodes we need to visit and an index to keep track of which child we are currently visiting.
+
+In the B+-Tree contrary, the Next() function is much simpler since we only need to follow the linked list of leaf nodes. 
+
+In the benchmark we will see how much faster this approach is for range queries compared to the B-Tree, especially as the size of the result set increases. TODO: forward ref 
+
 === LSM-Tree Implementation
 
 == Benchmark Design
