@@ -92,6 +92,7 @@ $$
 
 Data is then read or written in blocks/ pages, which are typically 4KB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access lead to increased latency due to the need for the head to move around the disk. 
 
+/*
 #figure(
   block(
     fill: luma(250),
@@ -140,6 +141,7 @@ Data is then read or written in blocks/ pages, which are typically 4KB in size @
   kind: "calculation",
   supplement: [Calculation]
 ) <calc-io-comparison>
+*/
 
 === Solid State Drives
 On the other side,, #gls("SSD") use semiconductor-based NAND flash memory. Because they lack mechanical components, the physical constraints of seek time ($T_(s e e k)$) and rotational latency ($T_(r o t)$) are eliminated. Instead, performance is determined by electrical signal propagation and the efficiency of the internal controller.
