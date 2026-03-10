@@ -270,6 +270,84 @@ To implement this generically, the strategy pattern @strategy will be used where
 
 Here, the NodeAccessor interface defines the common operations which are different in the specific tree implementations. 
 
+Now that we have a structure for the code, the actual design of the trees will be done. 
+
+==== Shared Page Layout
+Both B-Tree and B+-Tree will use the same page structure. The complete design will be inspired by SQLite, which uses the Slotted Page Model we saw at @fig-slotted-page.
+Therefore, the page layout will consist of a header, a cell pointer array and a cell content area. The header will contain metadata about the page, such as the number of cells currently stored on the page and the offset to the top of the cell content area. The cell pointer array will contain absolute offsets to the cells in the cell content area, which will store the actual key-value pairs. The cell content area will grow upwards from the end of the page towards the header, while the cell pointer array will grow downwards from the end of the header towards the cell content area. 
+
+
+#figure(
+  caption: "Page layout for both B-Tree and B+-Tree",
+  table(
+    columns: (auto, auto, auto, auto),
+    fill: (_, row) => if row == 0 { luma(220) } else if calc.odd(row) { luma(245) } else { white },
+    align: (left, left, left, left),
+    table.header(
+      [*Offset*], [*Size*], [*Field*], [*Description*],
+    ),
+    [`[0]`],      [1 byte],        [`type`],            [Page type: `0x00` = internal, `0x01` = leaf],
+    [`[1–2]`],    [2 bytes],       [`numCells`],         [Number of cells currently stored on this page],
+    [`[3–4]`],    [2 bytes],       [`cellContentStart`], [Absolute offset to the top of the cell content area; initialised to `4096` (`PageSize`)],
+    [`[5–8]`],    [4 bytes],       [`rightmost`],        [Page ID of the rightmost child pointer (internal pages only); unused on leaves],
+    [`[9–12]`],   [4 bytes],       [`nextLeaf`],         [Page ID of the next leaf in linked list (B+ tree leaves only; `0xFFFFFFFF` = none],
+    [`[13+]`],    [2 bytes × `n`], [`cellPtrs[]`],       [Cell pointer array — one `uint16` absolute page offset per cell; grows downward into free space],
+    [`[varies]`], [—],             [_(free space)_],     [Unused bytes between the end of `cellPtrs[]` and `cellContentStart`],
+    [`[varies]`], [—],             [_(cell content)_],   [Cell bytes allocated by `AllocCell`; each cell starts at the offset stored in its `cellPtrs` entry. Grows upward from `4096` toward the header],
+  ),
+)<page-layout>
+
+==== B-tree Cell Format
+Now, the individual cell layout can be designed. Since in a B-Tree there is no difference between internal and leaf nodes, the same cell format will be used. Here, we need to store the child pointer for the left child subtree and then the actual key-value pair. Since the value can be of any length, we also need to store the length of the value in order to know how many bytes to read for the value.
+
+#figure(
+  caption: "Cell layout for B-Tree nodes",
+  table(
+    columns: (auto, auto, auto, auto),
+    fill: (_, row) => if row == 0 { luma(220) } else if calc.odd(row) { luma(245) } else { white },
+    align: (left, left, left, left),
+    table.header(
+      [*Offset*], [*Size*], [*Field*], [*Description*],
+    ),
+    [`[0–3]`],   [4 bytes],       [`leftChild`], [Page ID of the left child subtree for this separator key],
+    [`[4–11]`],  [8 bytes],       [`key`],       [`int64` key],
+    [`[12–13]`], [2 bytes],       [`valLen`],    [Length of the value payload in bytes],
+    [`[14+]`],   [`valLen` bytes],[`value`],     [Raw value bytes],
+  )
+)
+
+==== B+ tree Cell Formats
+In the B+-Tree on the other hand there are as we saw at @b-plus-disk-mapping the internal and leaf nodes store different things. In internal nodes, there is only the key and the left child pointer which need to be stored, while in the leaf nodes the actual key-value pairs need to be stored. As a result there are two different cell formats for B+Trees:
+
+#figure(
+  caption: "Cell layout for internal B+-Tree nodes",
+  table(
+    columns: (auto, auto, auto, auto),
+    fill: (_, row) => if row == 0 { luma(220) } else if calc.odd(row) { luma(245) } else { white },
+    align: (left, left, left, left),
+    table.header(
+      [*Offset*], [*Size*], [*Field*], [*Description*],
+    ),
+    [`[0–3]`],  [4 bytes], [`leftChild`], [Page ID of the left child subtree for this separator key],
+    [`[4–11]`], [8 bytes], [`key`],       [`int64` separator key],
+  )
+)
+
+#figure(
+  caption: "Cell layout for leaf B+-Tree nodes",
+  table(
+    columns: (auto, auto, auto, auto),
+    fill: (_, row) => if row == 0 { luma(220) } else if calc.odd(row) { luma(245) } else { white },
+    align: (left, left, left, left),
+    table.header(
+      [*Offset*], [*Size*], [*Field*], [*Description*],
+    ),
+    [`[0–7]`],  [8 bytes],        [`key`],    [`int64` key],
+    [`[8–9]`],  [2 bytes],        [`valLen`], [Length of the value payload in bytes],
+    [`[10+]`],  [`valLen` bytes], [`value`],  [Raw value bytes],
+  )
+)
+
 
 ==== Insertion algorithm
 ==== Point query algorithm
