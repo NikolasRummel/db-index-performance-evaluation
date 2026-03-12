@@ -1,12 +1,13 @@
 #import "@preview/clean-dhbw:0.4.0": gls
 
 = Introduction
+Note: Text not finished. Glossary and abbreviation entries are misssing/ not finished etc.
 
 == Motivation
 Applications are getting more and more data intensive. Social media plattforms have millions of users generating vast amounts of data daily, companys store huge amount of data in database systems to analyze customer behavior or sales trends and with the rise of AI, more and more data is being generated and processed to train machine learning models.
-Depending on the use case, this data needs to be processed in different ways. For instance, in an online transaction processing (OLTP) system, data needs to be inserted, updated and queried very fast to provide a good user experience. In contrast, in an online analytical processing (OLAP) system, large amounts of data are analyzed to gain insights and generate reports for instance.
+Depending on the use case, this data needs to be processed in different ways. For instance, in an OLTP system, data needs to be inserted, updated and queried very fast to provide a good user experience. In contrast, in an online analytical processing OLAP system, large amounts of data are analyzed to gain insights and generate reports for instance.
 
-Traditionally, database have used B+-Trees as index structures to optimize data access. However, with the increasing data sizes and changing workloads, new index structures like Log-Structured Merge-Trees (LSM-Trees) have been developed to address the challenges of write-intensive workloads and more and more variations of B-Trees are being used to optimize read performance.
+Traditionally, database have used B+-Trees as index structures to optimize data access. However, with the increasing data sizes and changing workloads, new index structures like Log-Structured Merge-Trees have been developed to address the challenges of write-intensive workloads and more and more variations of B-Trees are being used to optimize read performance.
 
 The choice of the right index structure is crucial for the performance of a database system. Different index structures have different strengths and weaknesses, and the optimal choice depends on the specific workload and use case. Therefore, #gls("DBMS") developers must select the appropriate index for their specific software system, while software engineers need to understand the underlying principles of their chosen #gls("DBMS") to select the right platform and effectively optimize their application design for performance
 
