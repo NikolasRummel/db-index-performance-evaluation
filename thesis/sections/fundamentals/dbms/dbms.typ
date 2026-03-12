@@ -1,4 +1,4 @@
-#import "@preview/clean-dhbw:0.3.1": *
+#import "@preview/clean-dhbw:0.4.0": gls
 
 = Overview DBMS <dbms>
 

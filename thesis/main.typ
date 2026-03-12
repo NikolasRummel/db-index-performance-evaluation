@@ -1,8 +1,8 @@
-#import "@preview/clean-dhbw:0.3.1": *
+#import "@preview/clean-dhbw:0.4.0": *
 #import "glossary.typ": glossary-entries
 
 #show: clean-dhbw.with(
-  title: "Analyse und Vergleich von Datenbankindexstrukturen",
+  title: "Analysis and Comparison of Database Index Structures",
   authors: (
     (name: "Nikolas Rummel", student-id: "7654321", course: "TINF23B6", course-of-studies: "Informatik", company: (
       (name: "dmTECH GmbH", post-code: "76131", city: "Karlsruhe")
