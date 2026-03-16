@@ -10,7 +10,7 @@ go.work
 go.work.sum
 
 books/
-src/results
+src/out
 
 # Go build artifacts
 /src/benchmark
