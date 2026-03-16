@@ -118,6 +118,7 @@ func (t *BPTree) Get(key int64) ([]byte, error) {
 		n := btpage.NumCells(p)
 		idx := shared.FindIdx(p, key, n, t.Acc, true)
 		if idx < n {
+
 			k, val, _ := t.Acc.ReadCell(p, idx, true)
 			if k == key {
 				return val, nil
@@ -143,6 +144,7 @@ type RangeIterator struct {
 	end    int64
 	leafID uint64
 	idx    int
+	currPg *pager.Page // Pin the current page
 	k      int64
 	v      []byte
 	err    error
@@ -163,22 +165,30 @@ func (t *BPTree) Range(start, end int64) (index.Iterator, error) {
 
 func (it *RangeIterator) Next() bool {
 	for it.leafID != uint64(btpage.InvalidPage) {
-		p, err := it.tree.Pg.Read(it.leafID)
-		if err != nil {
-			it.err = err
-			return false
+		if it.currPg == nil {
+			p, err := it.tree.Pg.Read(it.leafID)
+			if err != nil {
+				it.err = err
+				return false
+			}
+			it.currPg = p
 		}
-		n := btpage.NumCells(p)
+
+		n := btpage.NumCells(it.currPg)
 		if it.idx < n {
-			k, v, _ := it.tree.Acc.ReadCell(p, it.idx, true)
+			k, v, _ := it.tree.Acc.ReadCell(it.currPg, it.idx, true)
+
 			if k > it.end {
 				return false
 			}
+
 			it.k, it.v = k, v
 			it.idx++
 			return true
 		}
-		it.leafID = uint64(btpage.NextLeaf(p))
+
+		it.leafID = uint64(btpage.NextLeaf(it.currPg))
+		it.currPg = nil
 		it.idx = 0
 	}
 	return false
