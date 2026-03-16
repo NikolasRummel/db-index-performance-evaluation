@@ -51,7 +51,14 @@ func (BPTreeAcc) ReadCell(p *pager.Page, i int, isLeaf bool) (int64, []byte, uin
 	}
 	lc := binary.LittleEndian.Uint32(p[off : off+4])
 	key := int64(binary.LittleEndian.Uint64(p[off+4 : off+12]))
-	return key, nil, lc // no value in internal cells
+	return key, nil, lc
+}
+
+func readCellZeroCopy(p *pager.Page, i int) (int64, []byte) {
+	off := int(btpage.CellPtr(p, i))
+	key := int64(binary.LittleEndian.Uint64(p[off : off+8]))
+	vl := int(binary.LittleEndian.Uint16(p[off+8 : off+10]))
+	return key, p[off+10 : off+10+vl] // direct slice into page buffer
 }
 
 func (BPTreeAcc) WriteCell(p *pager.Page, off int, key int64, value []byte, leftChild uint32, isLeaf bool) {
@@ -67,7 +74,7 @@ func (BPTreeAcc) WriteCell(p *pager.Page, off int, key int64, value []byte, left
 
 func (BPTreeAcc) OverwriteValue(p *pager.Page, i int, newVal []byte, isLeaf bool) {
 	if !isLeaf {
-		return // internal nodes have no value to overwrite
+		return
 	}
 	off := int(btpage.CellPtr(p, i)) + 8
 	binary.LittleEndian.PutUint16(p[off:off+2], uint16(len(newVal)))
@@ -118,7 +125,6 @@ func (t *BPTree) Get(key int64) ([]byte, error) {
 		n := btpage.NumCells(p)
 		idx := shared.FindIdx(p, key, n, t.Acc, true)
 		if idx < n {
-
 			k, val, _ := t.Acc.ReadCell(p, idx, true)
 			if k == key {
 				return val, nil
@@ -160,7 +166,13 @@ func (t *BPTree) Range(start, end int64) (index.Iterator, error) {
 		return nil, err
 	}
 	idx := shared.FindIdx(p, start, btpage.NumCells(p), t.Acc, true)
-	return &RangeIterator{tree: t, end: end, leafID: leafID, idx: idx}, nil
+	return &RangeIterator{
+		tree:   t,
+		end:    end,
+		leafID: leafID,
+		idx:    idx,
+		currPg: p,
+	}, nil
 }
 
 func (it *RangeIterator) Next() bool {
@@ -176,12 +188,10 @@ func (it *RangeIterator) Next() bool {
 
 		n := btpage.NumCells(it.currPg)
 		if it.idx < n {
-			k, v, _ := it.tree.Acc.ReadCell(it.currPg, it.idx, true)
-
+			k, v := readCellZeroCopy(it.currPg, it.idx)
 			if k > it.end {
 				return false
 			}
-
 			it.k, it.v = k, v
 			it.idx++
 			return true
