@@ -27,7 +27,7 @@ In order to compare the performance of these index structures and answering the 
 
 + *Write heavy workload (T5):* Like in T4 and similar to T4, this test simulates a mixed workload but now with a high write-to-read ratio (e.g., 5/95). This could be realistic in some kind of database workload like for industial machines which stores sensor data or metrics in the database. It measures the latency of write operations over time to evaluate how well the index structures maintain write performance under a mostly write workload. The output should be a line graph showing the write latency over time for each index structure under the mixed workload.
 
-+ *Memory usage (T5):* For all tests above, the memory usage of each index structure will be monitored and recorded to evaluate the memory efficiency of each index structure under the different workloads. The output should be bar charts showing the usage of each index structure for each test.
++ *Memory usage (T6):* For all tests above, the memory usage of each index structure will be monitored and recorded to evaluate the memory efficiency of each index structure under the different workloads. The output should be bar charts showing the usage of each index structure for each test.
 
 === Non-Functional Requirements
 In addition to the functional requirements, the benchmark should also meet the following non-functional requirements:
