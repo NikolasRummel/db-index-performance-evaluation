@@ -429,6 +429,31 @@ In the B+-Tree contrary, the Next() function is much simpler since we only need 
 In the benchmark we will see how much faster this approach is for range queries compared to the B-Tree, especially as the size of the result set increases. TODO: forward ref 
 
 === LSM-Tree Implementation
+To implement the existing LSM-Tree implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
+
+To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface:
+```go
+type LSM struct {
+	db *pebble.DB
+}
+func Open(dir string) (*LSM, error) {
+	opts := &pebble.Options{}
+	db, err := pebble.Open(dir, opts)
+	if err != nil {
+		return nil, fmt.Errorf("lsm: open: %w", err)
+	}
+	return &LSM{db: db}, nil
+}
+
+```
+Now to implement all CRUD operations, we can use the corresponding Pebble functions. For example, to implement the `Insert()` function, we can use the `Set()` function of the Pebble DB:
+```go
+func (l *LSM) Insert(key int64, value []byte) error {
+	return l.db.Set(encodeKey(key), value, pebble.NoSync)
+}
+```
+The arguments for the `Set()` function are the key, the value and the options for the write operation. Here both key and value must be a byte slice, which is why the int64 key is encoded. Also, the `NoSync` option is used to make a fair comparison with the custom implementations since they also do not synchronously write to the disk.
+
 
 == Benchmark Design
 === Deterministic data generation

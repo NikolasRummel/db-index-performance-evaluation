@@ -17,16 +17,7 @@ type LSM struct {
 
 // Open opens (or creates) a Pebble database at the given directory path.
 func Open(dir string) (*LSM, error) {
-	opts := &pebble.Options{
-		// Use a 64 MB memtable
-		MemTableSize: 16 << 20,
-		// Keep 2 memtables so one can be flushed while the other is active.
-		MemTableStopWritesThreshold: 4,
-		// L0 compaction trigger.
-		L0CompactionThreshold: 4,
-		L0StopWritesThreshold: 12,
-	}
-
+	opts := &pebble.Options{}
 	db, err := pebble.Open(dir, opts)
 	if err != nil {
 		return nil, fmt.Errorf("lsm: open: %w", err)
@@ -53,7 +44,6 @@ func (l *LSM) Get(key int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("lsm: get: %w", err)
 	}
-	// val is only valid until closer.Close(), so we copy it.
 	result := make([]byte, len(val))
 	copy(result, val)
 	closer.Close()
@@ -112,7 +102,6 @@ type rangeIterator struct {
 func (it *rangeIterator) Next() bool {
 	var valid bool
 	if it.first {
-		// iter.First() was already called in Range(); just check validity.
 		it.first = false
 		valid = it.iter.Valid()
 	} else {
