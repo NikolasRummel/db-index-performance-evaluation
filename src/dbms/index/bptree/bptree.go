@@ -110,17 +110,23 @@ func (t *BPTree) Get(key int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	p, err := t.Pg.Read(leafID)
-	if err != nil {
-		return nil, err
-	}
-	n := btpage.NumCells(p)
-	idx := shared.FindIdx(p, key, n, t.Acc, true)
-	if idx < n {
-		k, val, _ := t.Acc.ReadCell(p, idx, true)
-		if k == key {
-			return val, nil
+	for leafID != uint64(btpage.InvalidPage) {
+		p, err := t.Pg.Read(leafID)
+		if err != nil {
+			return nil, err
 		}
+		n := btpage.NumCells(p)
+		idx := shared.FindIdx(p, key, n, t.Acc, true)
+		if idx < n {
+			k, val, _ := t.Acc.ReadCell(p, idx, true)
+			if k == key {
+				return val, nil
+			}
+			if k > key {
+				return nil, nil
+			}
+		}
+		leafID = uint64(btpage.NextLeaf(p))
 	}
 	return nil, nil
 }
