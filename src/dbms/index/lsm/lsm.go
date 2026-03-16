@@ -6,6 +6,7 @@ package lsm
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"github.com/btree-query-bench/bmark/dbms/index"
 	"github.com/cockroachdb/pebble"
@@ -71,6 +72,17 @@ func (l *LSM) Range(start, end int64) (index.Iterator, error) {
 	}
 	iter.First()
 	return &rangeIterator{iter: iter, first: true}, nil
+}
+
+func (l *LSM) Levels() string {
+	m := l.db.Metrics()
+	var sb strings.Builder
+	for i, level := range m.Levels {
+		if level.NumFiles > 0 {
+			fmt.Fprintf(&sb, "L%d: %d files", i, level.NumFiles)
+		}
+	}
+	return sb.String()
 }
 
 // ─── Key encoding ─────────────────────────────────────────────────────────────

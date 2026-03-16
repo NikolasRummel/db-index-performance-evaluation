@@ -313,6 +313,21 @@ func (t *Tree) ReadHeader() error {
 	return nil
 }
 
+// --- Visualization and Info ---
+func (t *Tree) Height() int {
+	curr := uint64(t.RootID)
+	h := 1
+	for {
+		p, _ := t.Pg.Read(curr)
+		if p[btpage.OffType] == btpage.TypeLeaf {
+			return h
+		}
+		// follow first child
+		curr = uint64(btpage.Rightmost(p))
+		h++
+	}
+}
+
 func (t *Tree) Print(name string) {
 	dotPath := fmt.Sprintf("results/%s.dot", name)
 	pngPath := fmt.Sprintf("results/%s.png", name)
