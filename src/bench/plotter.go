@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -19,15 +20,29 @@ var indexColorHex = []string{
 }
 
 func PlotAll(outDir string) error {
-	if err := PlotT1(outDir); err != nil {
-		return fmt.Errorf("plot T1: %w", err)
-	}
-	if err := PlotT2(outDir); err != nil {
-		return fmt.Errorf("plot T2: %w", err)
+	allPlots := []struct {
+		file  string
+		label string
+		fn    func(string) error
+	}{
+		{"t1_point_query.csv", "T1", PlotT1},
+		{"t2_range_query.csv", "T2", PlotT2},
+		{"t3_write_throughput.csv", "T3", PlotT3},
+		{"t4_read_heavy.csv", "T4", PlotT4},
+		{"t5_write_heavy.csv", "T5", PlotT5},
 	}
 
-	if err := PlotT3(outDir); err != nil {
-		return fmt.Errorf("plot T2: %w", err)
+	for _, p := range allPlots {
+		path := filepath.Join(outDir, p.file)
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			fmt.Printf("[Plotter] Skipping %s: %s not found\n", p.label, p.file)
+			continue
+		}
+
+		if err := p.fn(outDir); err != nil {
+			return fmt.Errorf("failed to plot %s: %w", p.label, err)
+		}
 	}
 	return nil
 }
@@ -245,6 +260,97 @@ func PlotT3(outDir string) error {
 	page := components.NewPage()
 	page.AddCharts(line)
 	return renderPage(page, fmt.Sprintf("%s/t3.html", outDir), "[T3]")
+}
+
+func PlotT4(outDir string) error {
+	return plotMixedWorkload(
+		outDir,
+		"t4_read_heavy.csv",
+		"T4 — Read-Heavy Workload (95% Read / 5% Write)",
+		"t4.html",
+	)
+}
+
+func PlotT5(outDir string) error {
+	return plotMixedWorkload(
+		outDir,
+		"t5_write_heavy.csv",
+		"T5 — Write-Heavy Workload (5% Read / 95% Write)",
+		"t5.html",
+	)
+}
+func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
+	f, err := os.Open(filepath.Join(outDir, fileName))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	records, err := csv.NewReader(f).ReadAll()
+	if err != nil {
+		return err
+	}
+
+	type point struct {
+		opCount int
+		latNs   int64
+	}
+
+	byIndex := make(map[string][]point)
+	var indexOrder []string
+	seen := make(map[string]bool)
+
+	for _, rec := range records[1:] {
+		idxName := rec[0]
+		opCount, _ := strconv.Atoi(rec[1])
+		latNs, _ := strconv.ParseInt(rec[2], 10, 64)
+
+		if !seen[idxName] {
+			indexOrder = append(indexOrder, idxName)
+			seen[idxName] = true
+		}
+		byIndex[idxName] = append(byIndex[idxName], point{opCount, latNs})
+	}
+
+	var xLabels []string
+	if len(indexOrder) > 0 {
+		for _, p := range byIndex[indexOrder[0]] {
+			xLabels = append(xLabels, strconv.Itoa(p.opCount))
+		}
+	}
+
+	line := charts.NewLine()
+	line.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{
+			Title:    title,
+			Subtitle: "Latency (ns) over operation sequence",
+		}),
+		// Use log axis if B-Tree and LSM results are orders of magnitude apart
+		charts.WithYAxisOpts(opts.YAxis{Name: "Latency (ns)", Type: "value"}),
+		charts.WithXAxisOpts(opts.XAxis{Name: "Operation Count"}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true), Trigger: "axis"}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
+		charts.WithDataZoomOpts(opts.DataZoom{Type: "slider", Start: 0, End: 100}),
+		charts.WithInitializationOpts(opts.Initialization{Width: "1000px", Height: "600px"}),
+	)
+	line.SetXAxis(xLabels)
+
+	for i, idxName := range indexOrder {
+		var items []opts.LineData
+		for _, p := range byIndex[idxName] {
+			items = append(items, opts.LineData{Value: p.latNs})
+		}
+		line.AddSeries(idxName, items,
+			charts.WithLineStyleOpts(opts.LineStyle{
+				Color: indexColorHex[i%len(indexColorHex)],
+				Width: 2,
+			}),
+		)
+	}
+
+	page := components.NewPage()
+	page.AddCharts(line)
+	return renderPage(page, filepath.Join(outDir, outHtml), "["+title[:2]+"]")
 }
 
 // ---

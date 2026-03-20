@@ -17,6 +17,8 @@ func main() {
 		T1NQuery:        10_000,
 		TotalWriteOps:   500_000,
 		WriteWindowSize: 10_000,
+		TotalMixedOps:   200000,
+		LogInterval:     100,
 	}
 	if err := bench.RunBenchmarks(cfg); err != nil {
 		log.Fatalf("benchmark failed: %v", err)

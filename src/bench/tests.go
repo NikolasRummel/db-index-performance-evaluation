@@ -319,6 +319,73 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 	return nil
 }
 
+func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel string, fileName string) error {
+	f, err := os.Create(filepath.Join(cfg.OutDir, fileName))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	defer w.Flush()
+	_ = w.Write([]string{"index", "op_count", "latency_ns", "type"})
+
+	for _, def := range indices {
+		fmt.Printf("[%s] %s: Starting %d/%d workload...\n", testLabel, def.Name, readPercent, 100-readPercent)
+
+		idxPath := filepath.Join(cfg.DataDir, def.Name+"_"+testLabel)
+		idx, err := def.NewFunc(idxPath)
+		if err != nil {
+			continue
+		}
+
+		ds := NewDataset(cfg.T1N, cfg.Seed)
+		_ = fillIndex(idx, *ds)
+		rng := rand.New(rand.NewSource(cfg.Seed + 2))
+
+		for i := 0; i < cfg.TotalMixedOps; i++ {
+			decision := rng.Intn(100)
+
+			if decision < readPercent {
+				// READ
+				key := ds.Keys[rng.Intn(len(ds.Keys))]
+				start := time.Now()
+				_, _ = idx.Get(key)
+				lat := time.Since(start).Nanoseconds()
+
+				if i%cfg.LogInterval == 0 {
+					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(lat, 10), "read"})
+				}
+			} else {
+				// WRITE
+				newKey := rng.Int63()
+				val := make([]byte, cfg.ValueSize)
+				rng.Read(val)
+
+				start := time.Now()
+				_ = idx.Insert(newKey, val)
+				lat := time.Since(start).Nanoseconds()
+
+				if i%cfg.LogInterval == 0 {
+					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(lat, 10), "write"})
+				}
+			}
+		}
+		_ = idx.Close()
+	}
+	return nil
+}
+
+func RunBenchmarkT4(indices []IndexDef, cfg Config) error {
+	return RunMixedWorkload(indices, cfg, 95, "T4", "t4_read_heavy.csv")
+}
+
+func RunBenchmarkT5(indices []IndexDef, cfg Config) error {
+	return RunMixedWorkload(indices, cfg, 5, "T5", "t5_write_heavy.csv")
+}
+
+//---
+
 func avg(lats []int64) int64 {
 	var sum int64
 	for _, v := range lats {

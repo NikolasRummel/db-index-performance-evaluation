@@ -19,6 +19,9 @@ type Config struct {
 	T1NQuery        int
 	TotalWriteOps   int
 	WriteWindowSize int
+	TotalMixedOps   int
+	LogInterval     int
+	ValueSize       int
 }
 
 type IndexDef struct {
@@ -54,7 +57,11 @@ func RunBenchmarks(cfg Config) error {
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
 		return fmt.Errorf("create data dir: %w", err)
 	}
-	if err := RunBenchmarkT1(indices, cfg); err != nil {
+
+	if err := os.MkdirAll(cfg.OutDir, 0755); err != nil {
+		return fmt.Errorf("create results dir: %w", err)
+	}
+	/*if err := RunBenchmarkT1(indices, cfg); err != nil {
 		return err
 	}
 
@@ -63,6 +70,13 @@ func RunBenchmarks(cfg Config) error {
 	}
 
 	if err := RunBenchmarkT3(indices, cfg); err != nil {
+		return err
+	}*/
+	if err := RunBenchmarkT4(indices, cfg); err != nil {
+		return err
+	}
+
+	if err := RunBenchmarkT5(indices, cfg); err != nil {
 		return err
 	}
 
