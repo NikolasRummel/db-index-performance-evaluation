@@ -21,8 +21,8 @@ type Pager struct {
 }
 
 // Open opens (or creates) a pager backed by the given file.
-// cacheSize is the number of pages to hold in the LRU cache.
-func Open(path string, cacheSize int) (*Pager, error) {
+// cachePages is the number of pages to hold in the LRU cache.
+func Open(path string, cachePages int) (*Pager, error) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("opening pager file: %w", err)
@@ -30,7 +30,7 @@ func Open(path string, cacheSize int) (*Pager, error) {
 
 	p := &Pager{
 		file:  f,
-		cache: newLRUCache(cacheSize),
+		cache: newLRUCache(cachePages),
 	}
 
 	exists, err := p.fileExists()
