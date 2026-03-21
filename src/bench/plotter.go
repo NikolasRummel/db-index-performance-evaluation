@@ -19,6 +19,11 @@ var indexColorHex = []string{
 	"#dc322f", // red   — lsm
 }
 
+const (
+	chartWidth  = "1000px"
+	chartHeight = "500px"
+)
+
 func PlotAll(outDir string) error {
 	allPlots := []struct {
 		file  string
@@ -62,6 +67,7 @@ func PlotT1(outDir string) error {
 	var labels []string
 	var boxItems []opts.BoxPlotData
 	var barItems []opts.BarData
+	var memValues []uint64
 
 	for i, rec := range records[1:] {
 		minNs, _ := strconv.ParseFloat(rec[3], 64)
@@ -70,6 +76,7 @@ func PlotT1(outDir string) error {
 		q3Ns, _ := strconv.ParseFloat(rec[6], 64)
 		p99Ns, _ := strconv.ParseFloat(rec[10], 64)
 		tput, _ := strconv.ParseFloat(rec[11], 64)
+		mem, _ := strconv.ParseUint(rec[13], 10, 64)
 
 		labels = append(labels, rec[0])
 		boxItems = append(boxItems, opts.BoxPlotData{
@@ -85,6 +92,7 @@ func PlotT1(outDir string) error {
 				Color: indexColorHex[i%len(indexColorHex)],
 			},
 		})
+		memValues = append(memValues, mem)
 	}
 
 	box := charts.NewBoxPlot()
@@ -95,7 +103,8 @@ func PlotT1(outDir string) error {
 		}),
 		charts.WithYAxisOpts(opts.YAxis{Name: "Latency (ns)", Type: "log"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
-		charts.WithInitializationOpts(opts.Initialization{Width: "900px", Height: "500px"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithGridOpts(opts.Grid{Top: "20%"}),
 	)
 	box.SetXAxis(labels).AddSeries("Latency", boxItems)
 
@@ -104,12 +113,16 @@ func PlotT1(outDir string) error {
 		charts.WithTitleOpts(opts.Title{Title: "T1 — Point Query Throughput"}),
 		charts.WithYAxisOpts(opts.YAxis{Name: "Ops/sec"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
-		charts.WithInitializationOpts(opts.Initialization{Width: "900px", Height: "500px"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithGridOpts(opts.Grid{Top: "15%"}),
 	)
 	bar.SetXAxis(labels).AddSeries("Throughput", barItems)
 
+	memBar := plotMemoryBar("T1 — Point Query Memory Usage", labels, memValues)
+
 	page := components.NewPage()
-	page.AddCharts(box, bar)
+	page.SetLayout(components.PageFlexLayout)
+	page.AddCharts(box, bar, memBar)
 
 	return renderPage(page, fmt.Sprintf("%s/t1.html", outDir), "[T1]")
 }
@@ -129,6 +142,7 @@ func PlotT2(outDir string) error {
 	type point struct {
 		rangeSize int
 		totalMs   int64
+		mem       uint64
 	}
 
 	byIndex := make(map[string][]point)
@@ -139,12 +153,13 @@ func PlotT2(outDir string) error {
 		idxName := rec[0]
 		rangeSize, _ := strconv.Atoi(rec[1])
 		totalMs, _ := strconv.ParseInt(rec[3], 10, 64)
+		mem, _ := strconv.ParseUint(rec[5], 10, 64)
 
 		if !seen[idxName] {
 			indexOrder = append(indexOrder, idxName)
 			seen[idxName] = true
 		}
-		byIndex[idxName] = append(byIndex[idxName], point{rangeSize, totalMs})
+		byIndex[idxName] = append(byIndex[idxName], point{rangeSize, totalMs, mem})
 	}
 
 	var xLabels []string
@@ -163,8 +178,9 @@ func PlotT2(outDir string) error {
 		charts.WithYAxisOpts(opts.YAxis{Name: "Total time (ms)"}),
 		charts.WithXAxisOpts(opts.XAxis{Name: "Range size (keys)"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
-		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
-		charts.WithInitializationOpts(opts.Initialization{Width: "900px", Height: "500px"}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithGridOpts(opts.Grid{Top: "20%"}),
 	)
 	line.SetXAxis(xLabels)
 
@@ -184,8 +200,17 @@ func PlotT2(outDir string) error {
 		)
 	}
 
+	memData := make(map[string][]uint64)
+	for _, idxName := range indexOrder {
+		for _, p := range byIndex[idxName] {
+			memData[idxName] = append(memData[idxName], p.mem)
+		}
+	}
+	memLine := plotMemoryLine("T2 — Range Query Memory Usage", xLabels, indexOrder, memData)
+
 	page := components.NewPage()
-	page.AddCharts(line)
+	page.SetLayout(components.PageFlexLayout)
+	page.AddCharts(line, memLine)
 
 	return renderPage(page, fmt.Sprintf("%s/t2.html", outDir), "[T2]")
 }
@@ -205,6 +230,7 @@ func PlotT3(outDir string) error {
 	type point struct {
 		totalOps  int
 		opsPerSec float64
+		mem       uint64
 	}
 
 	byIndex := make(map[string][]point)
@@ -215,12 +241,13 @@ func PlotT3(outDir string) error {
 		idxName := rec[0]
 		totalOps, _ := strconv.Atoi(rec[1])
 		opsPerSec, _ := strconv.ParseFloat(rec[2], 64)
+		mem, _ := strconv.ParseUint(rec[4], 10, 64)
 
 		if !seen[idxName] {
 			indexOrder = append(indexOrder, idxName)
 			seen[idxName] = true
 		}
-		byIndex[idxName] = append(byIndex[idxName], point{totalOps, opsPerSec})
+		byIndex[idxName] = append(byIndex[idxName], point{totalOps, opsPerSec, mem})
 	}
 
 	var xLabels []string
@@ -239,8 +266,9 @@ func PlotT3(outDir string) error {
 		charts.WithYAxisOpts(opts.YAxis{Name: "Throughput (Ops/sec)"}),
 		charts.WithXAxisOpts(opts.XAxis{Name: "Total Operations (Growth)"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true), Trigger: "axis"}),
-		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
-		charts.WithInitializationOpts(opts.Initialization{Width: "900px", Height: "500px"}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithGridOpts(opts.Grid{Top: "20%"}),
 	)
 	line.SetXAxis(xLabels)
 
@@ -257,8 +285,17 @@ func PlotT3(outDir string) error {
 		)
 	}
 
+	memData := make(map[string][]uint64)
+	for _, idxName := range indexOrder {
+		for _, p := range byIndex[idxName] {
+			memData[idxName] = append(memData[idxName], p.mem)
+		}
+	}
+	memLine := plotMemoryLine("T3 — Write Throughput Memory Usage", xLabels, indexOrder, memData)
+
 	page := components.NewPage()
-	page.AddCharts(line)
+	page.SetLayout(components.PageFlexLayout)
+	page.AddCharts(line, memLine)
 	return renderPage(page, fmt.Sprintf("%s/t3.html", outDir), "[T3]")
 }
 
@@ -294,6 +331,7 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 	type point struct {
 		opCount int
 		latNs   int64
+		mem     uint64
 	}
 
 	byIndex := make(map[string][]point)
@@ -304,12 +342,13 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 		idxName := rec[0]
 		opCount, _ := strconv.Atoi(rec[1])
 		latNs, _ := strconv.ParseInt(rec[2], 10, 64)
+		mem, _ := strconv.ParseUint(rec[4], 10, 64)
 
 		if !seen[idxName] {
 			indexOrder = append(indexOrder, idxName)
 			seen[idxName] = true
 		}
-		byIndex[idxName] = append(byIndex[idxName], point{opCount, latNs})
+		byIndex[idxName] = append(byIndex[idxName], point{opCount, latNs, mem})
 	}
 
 	var xLabels []string
@@ -325,13 +364,13 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 			Title:    title,
 			Subtitle: "Latency (ns) over operation sequence",
 		}),
-		// Use log axis if B-Tree and LSM results are orders of magnitude apart
 		charts.WithYAxisOpts(opts.YAxis{Name: "Latency (ns)", Type: "value"}),
 		charts.WithXAxisOpts(opts.XAxis{Name: "Operation Count"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true), Trigger: "axis"}),
-		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
 		charts.WithDataZoomOpts(opts.DataZoom{Type: "slider", Start: 0, End: 100}),
-		charts.WithInitializationOpts(opts.Initialization{Width: "1000px", Height: "600px"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: "600px"}),
+		charts.WithGridOpts(opts.Grid{Top: "15%"}),
 	)
 	line.SetXAxis(xLabels)
 
@@ -348,8 +387,17 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 		)
 	}
 
+	memData := make(map[string][]uint64)
+	for _, idxName := range indexOrder {
+		for _, p := range byIndex[idxName] {
+			memData[idxName] = append(memData[idxName], p.mem)
+		}
+	}
+	memLine := plotMemoryLine(title+" Memory Usage", xLabels, indexOrder, memData)
+
 	page := components.NewPage()
-	page.AddCharts(line)
+	page.SetLayout(components.PageFlexLayout)
+	page.AddCharts(line, memLine)
 	return renderPage(page, filepath.Join(outDir, outHtml), "["+title[:2]+"]")
 }
 
@@ -365,4 +413,53 @@ func renderPage(page *components.Page, path, label string) error {
 	}
 	fmt.Printf("%s plot written to %s\n", label, path)
 	return nil
+}
+
+func plotMemoryBar(title string, labels []string, values []uint64) *charts.Bar {
+	bar := charts.NewBar()
+	bar.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: title}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "Memory (MB)"}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithGridOpts(opts.Grid{Top: "15%"}),
+	)
+	items := make([]opts.BarData, len(values))
+	for i, v := range values {
+		items[i] = opts.BarData{
+			Value: float64(v) / 1024 / 1024,
+			ItemStyle: &opts.ItemStyle{
+				Color: indexColorHex[i%len(indexColorHex)],
+			},
+		}
+	}
+	bar.SetXAxis(labels).AddSeries("Memory Usage", items)
+	return bar
+}
+
+func plotMemoryLine(title string, xLabels []string, indexOrder []string, data map[string][]uint64) *charts.Line {
+	line := charts.NewLine()
+	line.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: title}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "Memory (MB)"}),
+		charts.WithXAxisOpts(opts.XAxis{Name: "Progress"}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true), Trigger: "axis"}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithGridOpts(opts.Grid{Top: "15%"}),
+	)
+	line.SetXAxis(xLabels)
+	for i, idxName := range indexOrder {
+		var items []opts.LineData
+		for _, v := range data[idxName] {
+			items = append(items, opts.LineData{Value: float64(v) / 1024 / 1024})
+		}
+		line.AddSeries(idxName, items,
+			charts.WithLineStyleOpts(opts.LineStyle{
+				Color: indexColorHex[i%len(indexColorHex)],
+				Width: 2,
+			}),
+		)
+	}
+	return line
 }
