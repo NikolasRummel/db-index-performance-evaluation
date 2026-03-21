@@ -71,7 +71,7 @@ func FindIdx(p *pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
 	for lo < hi {
 		m := (lo + hi) / 2
 		k, _, _ := acc.ReadCell(p, m, leaf)
-		if k < key {
+		if k < key || (!leaf && k == key && acc.CopyUpLeaves()) {
 			lo = m + 1
 		} else {
 			hi = m

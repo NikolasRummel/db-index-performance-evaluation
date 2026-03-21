@@ -82,9 +82,6 @@ func (p *Pager) Allocate() (uint64, error) {
 	if err := p.writePageToDisk(id, &blank); err != nil {
 		return 0, err
 	}
-	if err := p.writePageCount(); err != nil {
-		return 0, err
-	}
 	return id, nil
 }
 
@@ -109,6 +106,7 @@ func (p *Pager) Write(id uint64, pg *Page) error {
 
 // Close flushes and closes the underlying file.
 func (p *Pager) Close() error {
+	_ = p.writePageCount()
 	return p.file.Close()
 }
 
