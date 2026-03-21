@@ -14,12 +14,12 @@ type Config struct {
 	Seed            int64
 	OutDir          string
 	DataDir         string
-	Cache           int
-	T1N             int
-	T1NQuery        int
-	TotalWriteOps   int
-	WriteWindowSize int
-	TotalMixedOps   int
+	CachePages      int
+	DatasetSize     int
+	PointQueryCount int
+	WriteOpsTotal   int
+	WriteOpsWindow  int
+	MixedOpsTotal   int
 	LogInterval     int
 	ValueSize       int
 }
@@ -34,13 +34,13 @@ func Indexes(cfg Config) []IndexDef {
 		{
 			Name: "btree",
 			NewFunc: func(path string) (index.Index, error) {
-				return btree.Open(path, cfg.Cache)
+				return btree.Open(path, cfg.CachePages)
 			},
 		},
 		{
 			Name: "bptree",
 			NewFunc: func(path string) (index.Index, error) {
-				return bptree.Open(path, cfg.Cache)
+				return bptree.Open(path, cfg.CachePages)
 			},
 		},
 		{
@@ -61,7 +61,7 @@ func RunBenchmarks(cfg Config) error {
 	if err := os.MkdirAll(cfg.OutDir, 0755); err != nil {
 		return fmt.Errorf("create results dir: %w", err)
 	}
-	/*if err := RunBenchmarkT1(indices, cfg); err != nil {
+	if err := RunBenchmarkT1(indices, cfg); err != nil {
 		return err
 	}
 
@@ -71,7 +71,7 @@ func RunBenchmarks(cfg Config) error {
 
 	if err := RunBenchmarkT3(indices, cfg); err != nil {
 		return err
-	}*/
+	}
 	if err := RunBenchmarkT4(indices, cfg); err != nil {
 		return err
 	}

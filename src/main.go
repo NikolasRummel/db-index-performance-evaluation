@@ -10,15 +10,16 @@ func main() {
 	log.Printf("Welcome to BTree Query Benchmark!\n\n")
 	cfg := bench.Config{
 		Seed:            42,
-		Cache:           512,
+		CachePages:      512,
 		DataDir:         "./out/data",
 		OutDir:          "./out/results",
-		T1N:             1_000_000,
-		T1NQuery:        10_000,
-		TotalWriteOps:   500_000,
-		WriteWindowSize: 10_000,
-		TotalMixedOps:   200000,
-		LogInterval:     100,
+		DatasetSize:     100_000,
+		PointQueryCount: 5_000,
+		WriteOpsTotal:   50_000,
+		WriteOpsWindow:  5_000,
+		MixedOpsTotal:   20_000,
+		LogInterval:     500,
+		ValueSize:       64,
 	}
 	if err := bench.RunBenchmarks(cfg); err != nil {
 		log.Fatalf("benchmark failed: %v", err)

@@ -14,26 +14,26 @@ import (
 )
 
 type T1Result struct {
-	Index               string
-	NDataset            int
-	NQueries            int
-	MinNs               int64
-	Q1Ns                int64
-	P50Ns               int64
-	Q3Ns                int64
-	MaxNs               int64
-	AvgNs               int64
-	P95Ns               int64
-	P99Ns               int64
-	ThroughputOpsPerSec float64
-	TotalMs             int64
+	Index     string
+	NDataset  int
+	NQueries  int
+	MinNs     int64
+	Q1Ns      int64
+	P50Ns     int64
+	Q3Ns      int64
+	MaxNs     int64
+	AvgNs     int64
+	P95Ns     int64
+	P99Ns     int64
+	OpsPerSec float64
+	TotalMs   int64
 }
 
 var t1Header = []string{
 	"index", "n_dataset", "n_queries",
 	"min_ns", "q1_ns", "p50_ns", "q3_ns", "max_ns",
 	"avg_ns", "p95_ns", "p99_ns",
-	"throughput_ops_sec", "total_ms",
+	"ops_per_sec", "total_ms",
 }
 
 func fillIndex(idx index.Index, ds Dataset) error {
@@ -46,8 +46,8 @@ func fillIndex(idx index.Index, ds Dataset) error {
 }
 
 func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
-	ds := NewDataset(cfg.T1N, cfg.Seed)
-	queryKeys := ds.RandomKeys(cfg.T1NQuery)
+	ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
+	queryKeys := ds.RandomKeys(cfg.PointQueryCount)
 
 	if err := os.MkdirAll(cfg.OutDir, 0755); err != nil {
 		return fmt.Errorf("create out dir: %w", err)
@@ -63,7 +63,7 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 	_ = w.Write(t1Header)
 
 	for _, def := range indices {
-		fmt.Printf("[T1] %s: filling index with %d keys...\n", def.Name, cfg.T1N)
+		fmt.Printf("[T1] %s: filling index with %d keys...\n", def.Name, cfg.DatasetSize)
 
 		idxPath := filepath.Join(cfg.DataDir, def.Name+"_t1")
 		idx, err := def.NewFunc(idxPath)
@@ -85,9 +85,9 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 			fmt.Printf("[T1] %s: lsm levels = %s\n", def.Name, l.Levels())
 		}
 
-		fmt.Printf("[T1] %s: running %d point queries...\n", def.Name, cfg.T1NQuery)
+		fmt.Printf("[T1] %s: running %d point queries...\n", def.Name, cfg.PointQueryCount)
 
-		lats := make([]int64, 0, cfg.T1NQuery)
+		lats := make([]int64, 0, cfg.PointQueryCount)
 		start := time.Now()
 
 		for _, key := range queryKeys {
@@ -107,23 +107,23 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 		sort.Slice(lats, func(i, j int) bool { return lats[i] < lats[j] })
 
 		r := T1Result{
-			Index:               def.Name,
-			NDataset:            cfg.T1N,
-			NQueries:            cfg.T1NQuery,
-			MinNs:               lats[0],
-			Q1Ns:                pct(lats, 25),
-			P50Ns:               pct(lats, 50),
-			Q3Ns:                pct(lats, 75),
-			MaxNs:               lats[len(lats)-1],
-			AvgNs:               avg(lats),
-			P95Ns:               pct(lats, 95),
-			P99Ns:               pct(lats, 99),
-			ThroughputOpsPerSec: float64(cfg.T1NQuery) / totalDuration.Seconds(),
-			TotalMs:             totalDuration.Milliseconds(),
+			Index:     def.Name,
+			NDataset:  cfg.DatasetSize,
+			NQueries:  cfg.PointQueryCount,
+			MinNs:     lats[0],
+			Q1Ns:      pct(lats, 25),
+			P50Ns:     pct(lats, 50),
+			Q3Ns:      pct(lats, 75),
+			MaxNs:     lats[len(lats)-1],
+			AvgNs:     avg(lats),
+			P95Ns:     pct(lats, 95),
+			P99Ns:     pct(lats, 99),
+			OpsPerSec: float64(cfg.PointQueryCount) / totalDuration.Seconds(),
+			TotalMs:   totalDuration.Milliseconds(),
 		}
 
 		fmt.Printf("[T1] %s: min=%dns q1=%dns p50=%dns q3=%dns max=%dns avg=%dns p95=%dns p99=%dns tput=%.0f ops/s\n",
-			r.Index, r.MinNs, r.Q1Ns, r.P50Ns, r.Q3Ns, r.MaxNs, r.AvgNs, r.P95Ns, r.P99Ns, r.ThroughputOpsPerSec)
+			r.Index, r.MinNs, r.Q1Ns, r.P50Ns, r.Q3Ns, r.MaxNs, r.AvgNs, r.P95Ns, r.P99Ns, r.OpsPerSec)
 
 		_ = w.Write([]string{
 			r.Index,
@@ -137,7 +137,7 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 			strconv.FormatInt(r.AvgNs, 10),
 			strconv.FormatInt(r.P95Ns, 10),
 			strconv.FormatInt(r.P99Ns, 10),
-			strconv.FormatFloat(r.ThroughputOpsPerSec, 'f', 2, 64),
+			strconv.FormatFloat(r.OpsPerSec, 'f', 2, 64),
 			strconv.FormatInt(r.TotalMs, 10),
 		})
 	}
@@ -147,20 +147,20 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 }
 
 type T2Result struct {
-	Index                string
-	RangeSize            int
-	KeysRead             int
-	TotalMs              int64
-	ThroughputKeysPerSec float64
+	Index     string
+	RangeSize int
+	KeysRead  int
+	TotalMs   int64
+	OpsPerSec float64
 }
 
 var t2Header = []string{
 	"index", "range_size", "keys_read",
-	"total_ms", "throughput_keys_per_sec",
+	"total_ms", "ops_per_sec",
 }
 
 func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
-	ds := NewDataset(cfg.T1N, cfg.Seed)
+	ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
 	sortedKeys := ds.SortedKeys()
 
 	if err := os.MkdirAll(cfg.OutDir, 0755); err != nil {
@@ -177,7 +177,7 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 	_ = w.Write(t2Header)
 
 	for _, def := range indices {
-		fmt.Printf("[T2] %s: filling index with %d keys...\n", def.Name, cfg.T1N)
+		fmt.Printf("[T2] %s: filling index with %d keys...\n", def.Name, cfg.DatasetSize)
 
 		idxPath := filepath.Join(cfg.DataDir, def.Name+"_t2")
 		idx, err := def.NewFunc(idxPath)
@@ -193,7 +193,7 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 		}
 
 		var t2Sizes []int
-		for s := 4096; s <= 500_000; s *= 2 {
+		for s := 4096; s <= 500_000 && s <= len(sortedKeys); s *= 2 {
 			t2Sizes = append(t2Sizes, s)
 		}
 
@@ -223,22 +223,22 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 			totalDuration := time.Since(start)
 
 			r := T2Result{
-				Index:                def.Name,
-				RangeSize:            size,
-				KeysRead:             keysRead,
-				TotalMs:              totalDuration.Microseconds(),
-				ThroughputKeysPerSec: float64(keysRead) / totalDuration.Seconds(),
+				Index:     def.Name,
+				RangeSize: size,
+				KeysRead:  keysRead,
+				TotalMs:   totalDuration.Microseconds(),
+				OpsPerSec: float64(keysRead) / totalDuration.Seconds(),
 			}
 
 			fmt.Printf("[T2] %s: size=%d keys_read=%d total=%dµs tput=%.0f keys/s\n",
-				r.Index, r.RangeSize, r.KeysRead, r.TotalMs, r.ThroughputKeysPerSec)
+				r.Index, r.RangeSize, r.KeysRead, r.TotalMs, r.OpsPerSec)
 
 			_ = w.Write([]string{
 				r.Index,
 				strconv.Itoa(r.RangeSize),
 				strconv.Itoa(r.KeysRead),
 				strconv.FormatInt(r.TotalMs, 10),
-				strconv.FormatFloat(r.ThroughputKeysPerSec, 'f', 2, 64),
+				strconv.FormatFloat(r.OpsPerSec, 'f', 2, 64),
 			})
 		}
 
@@ -250,14 +250,14 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 }
 
 type T3Result struct {
-	Index             string
-	TimeSec           int
-	InsertsThisSec    int
-	CumulativeInserts int
+	Index         string
+	OpCount       int
+	OpsPerSec     float64
+	CumulativeOps int
 }
 
 var t3Header = []string{
-	"index", "time_sec", "inserts_this_sec", "cumulative_inserts",
+	"index", "op_count", "ops_per_sec", "cumulative_ops",
 }
 
 func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
@@ -288,9 +288,9 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 		windowStart := time.Now()
 		windowOps := 0
 
-		for i := 0; i < cfg.TotalWriteOps; i++ {
+		for i := 0; i < cfg.WriteOpsTotal; i++ {
 			key := rng.Int63()
-			val := make([]byte, ValueSize)
+			val := make([]byte, cfg.ValueSize)
 			rng.Read(val)
 
 			if err := idx.Insert(key, val); err != nil {
@@ -299,7 +299,7 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 
 			windowOps++
 
-			if windowOps >= cfg.WriteWindowSize {
+			if windowOps >= cfg.WriteOpsWindow {
 				duration := time.Since(windowStart).Seconds()
 				opsPerSec := float64(windowOps) / duration
 
@@ -339,11 +339,11 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 			continue
 		}
 
-		ds := NewDataset(cfg.T1N, cfg.Seed)
+		ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
 		_ = fillIndex(idx, *ds)
 		rng := rand.New(rand.NewSource(cfg.Seed + 2))
 
-		for i := 0; i < cfg.TotalMixedOps; i++ {
+		for i := 0; i < cfg.MixedOpsTotal; i++ {
 			decision := rng.Intn(100)
 
 			if decision < readPercent {

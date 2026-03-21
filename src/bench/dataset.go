@@ -6,15 +6,13 @@ import (
 	"slices"
 )
 
-const ValueSize = 64
-
 type Dataset struct {
 	Keys   []int64
 	Values [][]byte
 	rng    *rand.Rand
 }
 
-func NewDataset(n int, seed int64) *Dataset {
+func NewDataset(n int, valueSize int, seed int64) *Dataset {
 	rng := rand.New(rand.NewSource(seed))
 
 	keys := make([]int64, n)
@@ -25,7 +23,7 @@ func NewDataset(n int, seed int64) *Dataset {
 
 	values := make([][]byte, n)
 	for i := range values {
-		v := make([]byte, ValueSize)
+		v := make([]byte, valueSize)
 		binary.LittleEndian.PutUint64(v, uint64(keys[i]))
 		rng.Read(v[8:])
 		values[i] = v
