@@ -5,7 +5,7 @@
 == Storage and Storage Management <storage>
 To understand how a #gls("DBMS") handles data, it is essential to distinguish between the physical storage media and the torage management layer inside the #gls("DBMS"). While storage refers to the hardware devices (e.g., SSDs, HDDs) and their physical characteristics, storage management is the software component of the #gls("DBMS"), that provides an abstraction between the logical data model and the physical hardware.
 
-=== Physical Storage Media
+=== Physical Storage Media <physical_storage>
 The choice of storage media directly impacts the performance, durability, and cost of a database system. Modern systems typically navigate a trade-off between speed and persistence within the memory hierarchy.
 
 #figure(
@@ -166,7 +166,7 @@ To now read a physical page, we have a constant access time even though the data
 ==== Buffer Management 
 In order to speed up data acces, the goal of a #gls("DBMS") is to keep as much data as possible in main memory, since access to main memory is much faster than access to secondary storage (see @memory-pyramid).
 
-The Buffer Manager is now responsible for smartly managing the most important data in the main memory to speedup query performance. In #gls("DBMS"), the buffer manager holds a pool of pages in main memory, which are used to cache data from disk @elmasri2016[p. 557]. Since the main memory is limited, the buffer manager needs to decide which pages to keep in memory and which pages to evict when new pages need to be loaded. This is done using buffer replacement policies, which determine which page to evict based on factors such as recency of access, frequency of access, and the cost of reloading the page from disk @elmasri2016[p. 559].
+The Buffer Manager is responsible for smartly managing the most important data in the main memory to speed up query performance. In a #gls("DBMS"), the buffer manager holds a pool of database pages in main memory, which are used to cache data from disk @elmasri2016[p. 557]. These logical database pages serve as the atomic unit of transfer between software and storage, abstracting the underlying hardware specifics we saw in @physical_storage. Since main memory is limited, the buffer manager must decide which DB-pages to keep and which to evict when new data is required. This is achieved through buffer replacement policies, which determine eviction based on factors such as recency of access, frequency of use, and the specific cost of reloading a page from the underlying physical storage @elmasri2016[p. 559]
 
 ===== Common Buffer Replacement Policies
 - *Least Recently Used (LRU)*: Evicts the page that has not been accessed for the longest time.
