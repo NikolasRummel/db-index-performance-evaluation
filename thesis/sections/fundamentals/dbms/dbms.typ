@@ -22,8 +22,8 @@ Also Users dont interact with transaction manager directly, but rather with the 
 Maybe use other figure? Maybe the one from elmasri?
 
 == Query Processing and Data Definition 
-As an entry point for users and database administrators, they can use specific languages to interact with the #gls("DBMS"). The *DDL Compiler* processes data definition statements, which are used to define the database schema, including tables, indexes, and other database objects. For end users, the *Query Processor* is responsible for data manipulation and retrieval. 
-Most common for both database administrators and end users is the use of #gls("SQL") as a language to interact with the #gls("DBMS"). Both compilers forward its parsed statements to the *Execution Engine*, which usually optimizes the execution plan and then executes the statements. 
+Users and database administrators interact with the #gls("DBMS") though specific ddl and dml statements. The *DDL Compiler* processes data definition statements, which are used to define the database schema, including tables, indexes, and other database objects. For end users, the *Query Processor* is responsible for data manipulation and retrieval. 
+For relational databases, the most common language for both database administrators and end users is #gls("SQL"). Both the processor and compiler then forward their parsed statements to the *Execution Engine*, which usually optimizes the execution plan and then executes the statements. 
 
 == Component B 
 Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
