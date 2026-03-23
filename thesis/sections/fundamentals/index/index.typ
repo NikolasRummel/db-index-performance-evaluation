@@ -1,5 +1,4 @@
 #import "@preview/clean-dhbw:0.4.0": gls
-
 #import "@preview/cetz:0.4.2"
 
 
@@ -250,15 +249,165 @@ fifty percent @lsm_original[p. 351].
 Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed for high write throughput @lsm_original[p. 351] and was originally proposed by O'Neil et al. in 1996 @lsm_original.
 
 ==== LSM-Tree Structure according to O'Neil et al.
-Thhe fundamental concept of an LSM-Tree is based to batch writes together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
+The fundamental concept of an LSM-Tree is based to batch writes together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
 This is done using a hierachy of components (also called trees):
 
 - *$C_0$ Component:* This is the in-memory component where all new writes are initially stored which could use a 2-3 Tree or AVL Tree, since it doesnt neet to insist on disk page size constraints @lsm_original[p. 356]. 2-3 or AVL Trees are another type of balanced search tree, which will not be explained in detail here, but they also have a logarithmic time complexity @intro_algorithms [358], @intro_algorithms [502]. All new writes are first written to this component, since it is in-memory, it allows for very fast write operations. This implies two things: First, the data needs to be written to the disk ($C_1$ Component) at some point and second, the data is not savely stored in case of a crash @lsm_original[p. 355]. 
 - *$C_1$ Component:* This is now the on-disk component and larger than $C_0$. The data from $C_0$ is periodically merged into $C_1$ in a way that maintains the sorted order of the keys. The $C_1$ component is similar to a B-Tree, but optimized for sequential writes and reads with completely full nodes @lsm_original[p. 355].
 - *$C_k$ Components:* In practice, there can be multiple on-disk components ($C_k$ with $k in N$) which are periodically merged together in a similar way to maintain the sorted order and optimize for read performance @lsm_original[p. 355].
 
-As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. 
+*Insertion* in a LSM-Tree works by first writing the new key-value pair to the in-memory $C_0$ component. When the $C_0$ component becomes full, it is merged with the on-disk $C_1$ component, and the process repeats.
 
-*Searching* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found or all components have been searched. 
+*Update* of a key-value pair in a LSM-Tree is basically an insertion. However, the old value still exists in the LSM-Tree. This is because the new value is written to the $C_0$ component, while the old value still exists in the $C_1$ component. 
 
-*CRUD*
+*Delete* of a key-value pair in a LSM-Tree is also an insertion, but instead of writing the new value, we write a special tombstone value to the $C_0$ component. This tombstone value indicates that the key has been deleted, and when the $C_0$ component is merged with the $C_1$ component, the old value will be removed from the on-disk component.
+
+*Lookup* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found, a tombstone appears or all components have been searched. This can lead to inefficient read performance, since we might have to search through multiple on-disk components, which is a major drawback of LSM-Trees. To mitigate this problem, LSM-Trees often use Bloom filters, a data structure to quickly check if a key is likely to be present in an on-disk component before performing a more expensive search @kleppmann[p. 79].  
+
+
+
+As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. This process is then repeated for the other on-disk components $C_k$ with $k in N$ as well, where we merge the smaller, higher-level component $C_n$ with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$ component @lsm_original[p. 355]:
+
+#figure(
+  caption: [Generalized Rolling Merge Process: Data from a smaller, higher-level component $C_n$ is merged with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$.],
+  cetz.canvas({
+    import cetz.draw: *
+
+    let upper-fill = blue.lighten(95%)
+    let lower-fill = orange.lighten(95%)
+    let edge-style = (mark: (end: "stealth", fill: black, scale: .5))
+
+    // --- Component: Upper Level (Cn) ---
+    group(name: "cn", {
+      rect((-3, 3), (rel: (3, -1)), fill: upper-fill, name: "box")
+      content("box", text(size: 9pt)[*Upper: $C_n$* \ (Sorted Segment)])
+    })
+
+    // --- Component: Lower Level (Old Cn+1) ---
+    group(name: "old_cn1", {
+      rect((0.5, 3), (rel: (3, -1)), fill: lower-fill, name: "box")
+      content("box", text(size: 9pt)[*Lower: Old $C_(n+1)$* \ (Sorted Segment)])
+    })
+
+    // --- The Rolling Merge Logic ---
+    circle((0, 0.5), radius: 0.7, name: "merge_node")
+    content("merge_node", align(center, text(size: 8pt, weight: "bold")[Merge \ Sort \ Logic]))
+
+    line("cn.box.south", "merge_node.north-west", ..edge-style)
+    line("old_cn1.box.south", "merge_node.north-east", ..edge-style)
+    
+    // --- Result: New Cn+1 ---
+    group(name: "new_cn1", {
+      rect((-3, -1.5), (3, -2.2), fill: green.lighten(95%), name: "box", radius: 0.05)
+      content("box", text(size: 9pt)[*New $C_(n+1)$ Component* (Merged)])
+    })
+
+    line("merge_node.south", "new_cn1.box.north", stroke: 1.5pt + orange.lighten(50%), mark: (end: "stealth", fill: orange))
+  })
+) <lsm-rolling-merge>
+
+An example of this generalized rolling merge process is shown in the following figure. Imagine a bank account database where we have a $C_n$ component with recent updates and deletions, and an old $C_(n+1)$ component with existing entries. During the merge, the updated values from $C_n$ will replace their older counterparts in $C_(n+1)$, while tombstone markers indicating deletions will lead to the removal of those entries in the new $C_(n+1)$ component. This process ensures that the new on-disk component reflects the most up-to-date state of the data while maintaining efficient write performance @kleppmann[p. 79].
+
+#figure(
+  caption: [Example of rolling merge process. The smaller upper component carries both updated values and tombstone markers (#smallcaps[del]). During the merge, $C_n$ always wins: updated values replace their older counterparts in $C_(n+1)$, while tombstones lead to deletion meaning they are not written to the new $C_(n+1)$. Adapted from @kleppmann[Fig. 3.3, p. 74]],
+  cetz.canvas({
+    import cetz.draw: *
+
+    let node-style  = (fill: white, stroke: 1pt)
+    let leaf-fill   = blue.lighten(95%)
+    let disk-fill   = orange.lighten(95%)
+    let result-fill = green.lighten(95%)
+    let del-color   = red.darken(10%)
+    let edge-style  = (mark: (end: "stealth", fill: black, scale: 0.5))
+    let s           = 0.5pt + gray
+
+    // ── Cn (upper / smaller) — two rows ──
+    rect((-6.5, 6.2), (-0.5, 3.5), fill: leaf-fill, stroke: 1pt, radius: 0.05)
+    content((-3.5, 5.95), text(size: 9pt, weight: "bold")[ $C_n$])
+    content((-3.5, 5.65), text(size: 7pt, fill: gray)[Sorted segment — recent writes])
+
+    // row 1
+    rect((-6.2, 5.35), (rel: (5.4, -0.75)), fill: white, stroke: s)
+    line((-4.4, 5.35), (-4.4, 4.6), stroke: s)
+    line((-2.6, 5.35), (-2.6, 4.6), stroke: s)
+    content((-5.3, 5.08), text(size: 8pt)[Max: 1000])
+    content((-5.3, 4.78), text(size: 7pt, fill: gray)[first write])
+    content((-3.5, 5.08), text(size: 8pt)[Lisa: 2000])
+    content((-3.5, 4.78), text(size: 7pt, fill: gray)[first write])
+    content((-1.7, 5.08), text(size: 8pt)[Anna: 1500])
+    content((-1.7, 4.78), text(size: 7pt, fill: gray)[first write])
+
+    // row 2
+    rect((-6.2, 4.5), (rel: (5.4, -0.75)), fill: white, stroke: s)
+    line((-4.4, 4.5), (-4.4, 3.75), stroke: s)
+    line((-2.6, 4.5), (-2.6, 3.75), stroke: s)
+    content((-5.3, 4.23), text(size: 8pt)[Max: 1350])
+    content((-5.3, 3.93), text(size: 7pt, fill: gray)[update])
+    content((-3.5, 4.23), text(size: 8pt, fill: del-color)[Lisa: DEL])
+    content((-3.5, 3.93), text(size: 7pt, fill: gray)[tombstone])
+    content((-1.7, 4.23), text(size: 8pt)[Anna: 1900])
+    content((-1.7, 3.93), text(size: 7pt, fill: gray)[update])
+
+    // ── Old Cn+1 (lower / larger) — two rows ──
+    rect((0.5, 6.2), (6.5, 3.5), fill: disk-fill, stroke: 1pt, radius: 0.05)
+    content((3.5, 5.95), text(size: 9pt, weight: "bold")[ $C_(n+1)$])
+    content((3.5, 5.65), text(size: 7pt, fill: gray)[Sorted segment — existing entries])
+
+    // row 1
+    rect((0.8, 5.35), (rel: (5.4, -0.75)), fill: white, stroke: s)
+    line((2.6, 5.35), (2.6, 4.6), stroke: s)
+    line((4.4, 5.35), (4.4, 4.6), stroke: s)
+    content((1.7, 5.08), text(size: 8pt)[Max: 500])
+    content((1.7, 4.78), text(size: 7pt, fill: gray)[original])
+    content((3.5, 5.08), text(size: 8pt)[Lisa: 800])
+    content((3.5, 4.78), text(size: 7pt, fill: gray)[original])
+    content((5.3, 5.08), text(size: 8pt)[Anna: 600])
+    content((5.3, 4.78), text(size: 7pt, fill: gray)[original])
+
+    // row 2
+    rect((0.8, 4.5), (rel: (5.4, -0.75)), fill: white, stroke: s)
+    line((2.6, 4.5), (2.6, 3.75), stroke: s)
+    line((4.4, 4.5), (4.4, 3.75), stroke: s)
+    content((1.7, 4.23), text(size: 8pt)[Max: 1000])
+    content((1.7, 3.93), text(size: 7pt, fill: gray)[update])
+    content((3.5, 4.23), text(size: 8pt)[Lisa: 2000])
+    content((3.5, 3.93), text(size: 7pt, fill: gray)[update])
+    content((5.3, 4.23), text(size: 8pt)[Anna: 1500])
+    content((5.3, 3.93), text(size: 7pt, fill: gray)[update])
+
+    // ── Arrows into merge node ──
+    line((-3.5, 3.5), (-0.5, 1.85), ..edge-style)
+    line((3.5, 3.5), (0.5, 1.85), ..edge-style)
+
+    // ── Rolling merge circle ──
+    circle((0, 1.0), radius: 0.85, fill: white, stroke: 1pt)
+    content((0, 1), align(center, text(size: 8pt, weight: "bold")[Merge \ Sort \ Logic]))
+
+
+    // ── Arrow out ──
+    line((0, 0.15), (0, -0.8), ..edge-style)
+
+    // ── New Cn+1 result ──
+    rect((-6.5, -0.9), (6.5, -3.2), fill: result-fill, stroke: 1pt, radius: 0.05)
+    content((0, -1.25), text(size: 9pt, weight: "bold")[New $C_(n+1)$ — merged ])
+
+    // result entry grid
+    rect((-6.2, -1.65), (rel: (12.4, -1.3)), fill: white, stroke: s)
+    line((-2.07, -1.65), (-2.07, -2.95), stroke: s)
+    line((2.07, -1.65), (2.07, -2.95), stroke: s)
+
+    // Anna: kept
+    content((-4.14, -2.1),  text(size: 8pt, weight: "bold")[Anna: 1900])
+    content((-4.14, -2.45), text(size: 7pt, fill: gray)[latest update kept])
+
+    // Max: kept
+    content((0, -2.1),  text(size: 8pt, weight: "bold")[Max: 1350])
+    content((0, -2.45), text(size: 7pt, fill: gray)[latest update kept])
+
+    // Lisa: deleted
+    content((4.14, -2.1),  text(size: 8pt, fill: gray)[Lisa])
+    content((4.14, -2.45), text(size: 7pt, fill: gray)[tombstone — not written])
+    line((2.19, -1.7), (6.09, -2.9), stroke: 0.8pt + del-color)
+    line((6.09, -1.7), (2.19, -2.9), stroke: 0.8pt + del-color)
+  })
+) <lsm-rolling-merge2>
