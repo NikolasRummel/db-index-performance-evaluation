@@ -2,10 +2,11 @@
 
 #import "@preview/cetz:0.4.2"
 
-== Storage in DBMS <storage>
-The Storage component of a #gls("DBMS") is responsible for managing the physical storage of data on disk. It provides an abstraction layer between the logical data model and the physical storage, allowing the #gls("DBMS") to efficiently store and retrieve data while maintaining data integrity and consistency. 
+== Storage and Storage Management <storage>
+To understand how a #gls("DBMS") handles data, it is essential to distinguish between the physical storage media and the torage management layer inside the #gls("DBMS"). While storage refers to the hardware devices (e.g., SSDs, HDDs) and their physical characteristics, storage management is the software component of the #gls("DBMS"), that provides an abstraction between the logical data model and the physical hardware.
 
-There are different types of storage media that one can use, each having different characteristics in terms of performance, durability, and cost.
+=== Physical Storage Media
+The choice of storage media directly impacts the performance, durability, and cost of a database system. Modern systems typically navigate a trade-off between speed and persistence within the memory hierarchy.
 
 #figure(
   caption: [The Memory Hierarchy of Computers @scottLatency],
@@ -77,7 +78,7 @@ So one might think that the best choice would be to use the fastest storage medi
 
 In the following, we will briefly describe the characteristics of these storage media to understand further in the index chapter. 
 
-=== Hard disc drives
+==== Hard Disk Drives (HDD)
 #gls("HDD") are electromechanical storage devices that use spinning magnetic disks to store data. They have been the dominant form of secondary storage for decades due to their large capacity and relatively low cost @elmasri2016[p. 547]. However, they have slower access times and lower throughput compared to newer storage technologies like #gls("SSD"). 
 A #gls("HDD") has multiple discs which hold data and a read/write head that moves across the surface of the discs to access data. 
 
@@ -86,12 +87,15 @@ A #gls("HDD") has multiple discs which hold data and a read/write head that move
   caption: [A schematic of a hard disk drive],
 ) <hdd-schematic>
 
-On each of those discs, data is organized in concentric circles called tracks, which are further divided into sectors. And overlap of sector and track is called block, which often is also called page @elmasri2016[p. 549].  The read/write head moves to the appropriate track and sector to read or write data. The performance of a #gls("HDD") is influenced by factors such as seek time (the time it takes for the head to move to the correct track), rotational latency (the time it takes for the desired sector to rotate under the head), and transfer rate (the speed at which data can be read or written once the head is in position) @elmasri2016[p. 547]. In total the access time can be calculated as follows:
+On each of these discs, data is organized in concentric circles called tracks, which are further divided into sectors. A sector is the smallest addressable unit on the physical disk, traditionally 512 bytes or 4 KB in size @elmasri2016[p. 549]. 
+
+The read/write head moves to the appropriate track and sector to access data.
+The performance of a #gls("HDD") is influenced by factors such as seek time (the time it takes for the head to move to the correct track), rotational latency (the time it takes for the desired sector to rotate under the head), and transfer rate (the speed at which data can be read or written once the head is in position) @elmasri2016[p. 547]. In total the access time can be calculated as follows:
 $$
 $ T_(a c c e s s) = T_(s e e k) + T_(r o t) + T_(t r a n s f e r) $
 $$
 
-Data is then read or written in blocks/ pages, which are typically 4KB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access lead to increased latency due to the need for the head to move around the disk. 
+Data is then read or written in blocks, which are typically 4KB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access lead to increased latency due to the need for the head to move around the disk. 
 
 /*
 #figure(
@@ -144,7 +148,7 @@ Data is then read or written in blocks/ pages, which are typically 4KB in size @
 ) <calc-io-comparison>
 */
 
-=== Solid State Drives
+==== Solid State Drives (SSD)
 On the other side, #gls("SSD") use semiconductor-based NAND flash memory. Because they lack mechanical components, the physical constraints of seek time ($T_(s e e k)$) and rotational latency ($T_(r o t)$) are eliminated. Instead, performance is determined by electrical signal propagation and the efficiency of the internal controller.
 #figure(
   image("../../../assets/ssd.png", width: 70%),
@@ -157,21 +161,21 @@ Inside of the actual storage, the data is written in flash cells, which are the 
   caption: [A simple flash chip @os[p. 2]], 
 ) <flash-chip>
 
-To now read a page, we have a constant access time even though the data can be stored anywhere. This is called random access @os[p. 3] and is the key advantage of #gls("SSD") over #gls("HDD"). However, writing to a #gls("SSD") is more complex. Due to the nature of flash memory, data cannot be overwritten in place. Instead, an entire block must be erased before new data can be written, which leads to increased latency for write operations and can cause performance degradation over time as the drive fills up @os[p. 3]. To mitigate this issue, #gls("SSD") use techniques like wear leveling and garbage collection to manage the flash memory and maintain performance @os[p. 3-4].
+To now read a physical page, we have a constant access time even though the data can be stored anywhere. This is called random access @os[p. 3] and is the key advantage of #gls("SSD") over #gls("HDD"). However, writing to a #gls("SSD") is more complex. Due to the nature of flash memory, data cannot be overwritten in place. Instead, an entire block must be erased before new data can be written, which leads to increased latency for write operations and can cause performance degradation over time as the drive fills up @os[p. 3]. To mitigate this issue, #gls("SSD") use techniques like wear leveling and garbage collection to manage the flash memory and maintain performance @os[p. 3-4].
 
-=== Buffer Management 
+==== Buffer Management 
 In order to speed up data acces, the goal of a #gls("DBMS") is to keep as much data as possible in main memory, since access to main memory is much faster than access to secondary storage (see @memory-pyramid).
 
-The Buffer Manager is now responsible for smartly managing the most important data in the main memory to speedup query performance. In real #gls("DBMS"), the buffer manager holds a pool of pages in main memory, which are used to cache data from disk @elmasri2016[p. 557]. Since the main memory is limited, the buffer manager needs to decide which pages to keep in memory and which pages to evict when new pages need to be loaded. This is done using buffer replacement policies, which determine which page to evict based on factors such as recency of access, frequency of access, and the cost of reloading the page from disk @elmasri2016[p. 559].
+The Buffer Manager is now responsible for smartly managing the most important data in the main memory to speedup query performance. In #gls("DBMS"), the buffer manager holds a pool of pages in main memory, which are used to cache data from disk @elmasri2016[p. 557]. Since the main memory is limited, the buffer manager needs to decide which pages to keep in memory and which pages to evict when new pages need to be loaded. This is done using buffer replacement policies, which determine which page to evict based on factors such as recency of access, frequency of access, and the cost of reloading the page from disk @elmasri2016[p. 559].
 
-==== Common Buffer Replacement Policies
+===== Common Buffer Replacement Policies
 - *Least Recently Used (LRU)*: Evicts the page that has not been accessed for the longest time.
 - *Most Recently Used (MRU)*: Evicts the page that was accessed most recently
 - *First-In, First-Out (FIFO)*: Evicts the page that has been in the buffer pool the longest.
 - *Clock*: Evicts the page that has been accessed least recently, but uses a circular buffer and a "use" bit to track page usage.
 
 
-=== Data Organization: The Slotted Page Model
+==== Data Organization: The Slotted Page Model
 As previously mentioned, the #gls("DBMS") interacts with the storage layer in fixed-size units called pages (typically 4 KB). However, the data stored within these pages, such as database rows or index entries, often has a variable size. Names for instance don't have the same length, and to not waste space, the #gls("DBMS") needs to be able to manage variable-length records within a fixed-size page.
 
 To manage this efficiently, the Slotted Page Model is used @mssql_pages. 
@@ -196,6 +200,6 @@ In this model, a page is divided into three main sections:
 This architecture is essential for efficiently managing variable-length records within fixed-size pages, allowing the #gls("DBMS") to optimize storage utilization and access patterns while maintaining the necessary metadata for record management. 
 
 === Summary
-Understanding the physical limitations of storage media is fundamental to database design. While the Buffer Manager attempts to mask disk latency by caching data, the underlying organization of data into pages remains a critical factor in performance. 
+Understanding both the physical limitations of storage media and the logical mechanisms of storage management is fundamental to database design. While the Buffer Manager attempts to mask disk latency by caching data, the underlying organization of data into pages remains a critical factor in performance. 
 
-In the following chapter, we will build upon these concepts to explore how index structures utilize this page-based storage to provide logarithmic search performance, what makes it much more efficient then full-table scans.
+In the following chapter, we will build upon these concepts to explore how index structures utilize this page-based storage management to provide logarithmic search performance, what makes it much more efficient then full-table scans.

@@ -14,12 +14,8 @@ To understand index structures and their implementation in a #gls("DBMS"), one m
 
 #figure(
   image("../../../assets/dbms.png", width: 100%),
-  caption: [Architectural components of a DBMS according Prof. Dr Roland Schätzle @SchaetzleDB2.], 
+  caption: [Architectural components of a DBMS according to Elmasri and Navathe @elmasri2016[p. 43].], 
 ) <dbms_fig>
-
-TODO: Some components are missing - Query Optimizer e.g.
-Also Users dont interact with transaction manager directly, but rather with the query processor etc
-Maybe use other figure? Maybe the one from elmasri?
 
 == Query Processing and Data Definition 
 Users and database administrators interact with the #gls("DBMS") though specific ddl and dml statements. The *DDL Compiler* processes data definition statements, which are used to define the database schema, including tables, indexes, and other database objects. For end users, the *Query Processor* is responsible for data manipulation and retrieval. 
