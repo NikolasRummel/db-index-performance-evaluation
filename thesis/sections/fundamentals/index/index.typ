@@ -8,7 +8,7 @@
 == Motivation for Database Index Structures
 When the stored data in a #gls("DBMS") grows, it gets more and more important to efficiently queiry the data. 
 
-Imagine the szenario of a user searching for movies and series of a specific actor at Netflix. With approx 8000 titles available @statista_netflix, a scan though all titles to find the one maching the search query would take a long time. 
+Imagine the szenario of a user searching for movies and series of a specific actor at Netflix. With approx 8000 TODO: better example with more data titles available @statista_netflix, a scan though all titles to find the one maching the search query would take a long time. 
 
 ```sql
 SELECT * FROM titles WHERE actor = 'Tom Hanks';
@@ -79,11 +79,10 @@ A search tree can then be visualized as follows:
   })
 ) <unbalanced-tree>
 
-In this example, the search tree has a degree of $p=2$, meaning that each node can have at most one key and two child pointers. We see that the keys are organized in such a way that for each node, all keys in the left subtree are less than the key in the node, and all keys in the right subtree are greater.
+In this example, the search tree has a degree of $p=3$, meaning that each node can have at most one key and two child pointers. We see that the keys are organized in such a way that for each node, all keys in the left subtree are less than the key in the node, and all keys in the right subtree are greater.
 
 ==== Lookup <search-tree-lookup>
-A lookup operation in a B-Tree is similar to a normal search tree described in @search-tree-lookup.
-Now, to search for a specific key in the tree, for instance 35, we start at the root node (10) and follow the pointers if our search key is less than or greater than the key in the node. In this case, since 35 is greater than 10, we follow the right pointer to node 20. We repeat this process until we either find the key or reach a leaf node.
+TODO write when better example tree exists.
 
 ==== Performance Considerations
 
@@ -91,15 +90,11 @@ In our case from @unbalanced-tree, the search tree is unbalanced, meaning that n
 
 === B-Trees <btree>
 To ensure that a search tree stays balanced, we can use a B-Tree. They where first described by Bayer and McCreight in 1972 @btree_original and are widely used in database systems both releational and non-relational @kleppmann[p. 80].
-B-Trees are search trees with some additional contraints to ensure that the tree remains balenced @elmasri2016 [p. 619].
-However, inserting and deletion of keys is more complex due to the need to maintain balance. In this section, we will also describe the lookup, insertion and deletion operations in a B-Tree in a low level of detail. A detailed implementation of these will be discussed in @design. 
+B-Trees are search trees with some additional constraints to ensure that the tree remains balanced @elmasri2016[p. 619], thus maintaining a $O(log n)$ time complexity for search, insert, and delete operations. Another reason in favor of B-Trees is that the node size can be fixed to a database page size. This alignment ensures that adding or removing a node corresponds exactly to the allocation or deallocation of a single database page, allowing the buffer manager to efficiently manage the pages. 
 
-TODO: ALSO: Complete index doesnt fit in memory!! 
--> original paper btree 
+In addition, B-Trees were designed because the complete index structure does not fit in memory, so the tree is stored on disk @btree_original[p. 173]. This means that only a part of the tree is in memory at any given time, and the rest is stored on disk. To manage this, each B-Tree node contains a list of keys, pointers to child nodes and record pointers to the actual data records on disk. 
 
-TODO2: Better Btree images, better examples with more data.
-
-
+TODO Image
 #figure(
   caption: [Balenced version of the previous tree structure in @unbalanced-tree],
   cetz.canvas({
@@ -150,10 +145,9 @@ The constraints for a B-Tree of order $p$ are as follows @elmasri2016[p. 619] @d
   - For $1 < i < q$: $K_(i-1) < X < K_i$
   - For $i = 1$: $X < K_i$
   - For $i = q$: $K_(i-1) < X$
-4. To not end in a linked list in a node itself, each node has at most $p$ tree pointers.
+4. To prevent a node from degenerating into a long, linear search structure and to ensure the tree grows vertically, each node is capped at $p$ tree pointers, where $p$ is typically chosen so that the entire node fits exactly within the size of a single database page to optimize buffer management as mentioned in the beginning of this section.
 5. All internal nodes (except the root and leaves) have at least $ceil(p/2)$ tree pointers to ensure some kind of density to avoid wasting space. However, the root node has at least two tree pointers if it is not a leaf node meaning its the only node in the tree.
 6. All leaf nodes tree pointers $P_i$ are NULL and appear in the same level. This ensures that the tree is balanced and we get a guaranteed read performance of $O(h)$ with $h=log_p n$, where $n$ is the number of keys in the tree @intro_algorithms [p. 505]
-
 
 ==== Lookup 
 A lookup operation in a B-Tree is similar to a normal search tree described in @search-tree-lookup @kleppmann[p. 80]. We start at the root node and compare the search key with the keys in the node. If we find a match, we return the corresponding record pointer to the disc and read from there the according value. If not, we follow the appropriate pointer to the child node based on the key comparison. We repeat this process until we either find the key or reach a NULL pointer in a leaf node, meaning the search key is not present in the tree.

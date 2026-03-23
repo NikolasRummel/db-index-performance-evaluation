@@ -166,7 +166,7 @@ To now read a physical page, we have a constant access time even though the data
 ==== Buffer Management 
 In order to speed up data acces, the goal of a #gls("DBMS") is to keep as much data as possible in main memory, since access to main memory is much faster than access to secondary storage (see @memory-pyramid).
 
-The Buffer Manager is responsible for smartly managing the most important data in the main memory to speed up query performance. In a #gls("DBMS"), the buffer manager holds a pool of database pages in main memory, which are used to cache data from disk @elmasri2016[p. 557]. These logical database pages serve as the atomic unit of transfer between software and storage, abstracting the underlying hardware specifics we saw in @physical_storage. Since main memory is limited, the buffer manager must decide which DB-pages to keep and which to evict when new data is required. This is achieved through buffer replacement policies, which determine eviction based on factors such as recency of access, frequency of use, and the specific cost of reloading a page from the underlying physical storage @elmasri2016[p. 559]
+The Buffer Manager is responsible for smartly managing the most important data in the main memory to speed up query performance. In a #gls("DBMS"), the buffer manager holds a pool of database pages in main memory, which are used to cache data from disk @elmasri2016[p. 557]. These logical database pages serve as the atomic unit of transfer between software and storage, abstracting the underlying hardware specifics we saw in @physical_storage. Since main memory is limited, the buffer manager must decide which database page to keep and which to evict when new data is required. This is achieved through buffer replacement policies, which determine eviction based on factors such as recency of access, frequency of use, and the specific cost of reloading a page from the underlying physical storage @elmasri2016[p. 559]
 
 ===== Common Buffer Replacement Policies
 - *Least Recently Used (LRU)*: Evicts the page that has not been accessed for the longest time.
@@ -176,9 +176,9 @@ The Buffer Manager is responsible for smartly managing the most important data i
 
 
 ==== Data Organization: The Slotted Page Model
-As previously mentioned, the #gls("DBMS") interacts with the storage layer in fixed-size units called pages (typically 4 KB). However, the data stored within these pages, such as database rows or index entries, often has a variable size. Names for instance don't have the same length, and to not waste space, the #gls("DBMS") needs to be able to manage variable-length records within a fixed-size page.
+As previously mentioned, the #gls("DBMS") interacts with the storage layer in fixed-size database pages. However, the data stored within these pages, such as database rows or index entries, often has a variable size. Names for instance don't have the same length, and to not waste space, the #gls("DBMS") needs to be able to manage variable-length records within a fixed-size page.
 
-To manage this efficiently, the Slotted Page Model is used @mssql_pages. 
+To manage this efficiently, the Slotted Page Model is used @silberschatz2020database[pp. 592-594]
 In this model, a page is divided into three main sections:
 1. *Header:* Contains metadata such as the page ID, the number of slots, and a pointer to the start of free space.
 2. *Slot Directory:* An array of pointers (offsets) located at the front of the page that track the starting location of each record.
