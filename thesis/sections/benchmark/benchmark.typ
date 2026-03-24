@@ -43,7 +43,7 @@ In addition to the functional requirements, the benchmark should also meet the f
 To implement the benchmark and the index structures, a programming language needs to be selected. The selection of the programming language will be based on criteria such as performance or how complex the language is to work with, since the time is limited for this project.
 
 === Programming Language
-To select a programming language for the implementation of the benchmark the following methodology will be used:
+To select a programming language for the implementation of the benchmark a Utility Analysis according to Zangemeister @Zangemeister2014 will be used:
 + *Selection Criteria:* A set of criteria will be defined to evaluate the suitability of different programming languages for the implementation of the benchmark. 
 + *Gathering of Candidate Languages:* A list of candidate programming languages will be gathered.
 + *Matrix for Decision:* A decision matrix will be created to evaluate the candidate languages based on the defined criteria.
@@ -78,10 +78,10 @@ The candidate languages were scored from 1 (lowest) to 5 (highest) based on the 
   [*Criterion*], [*Weight*], [*C*], [*C++*], [*Rust*], [*Go*], [*Java*],
   [System Performance], [0.25], [5], [5], [5], [4], [2],
   [Language Complexity], [0.20], [3], [2], [1], [5], [4],
-  [Community & Ecosystem], [0.15], [5], [5], [4], [5], [5],
+  [Community & Ecosystem], [0.15], [5], [5], [4], [4], [5],
   [Personal Experience], [0.20], [2], [2], [1], [4], [5],
   [Learning Objectives], [0.20], [3], [3], [5], [5], [1],
-  [*Total Score*], [1.00], [3.65], [3.45], [3.25], [*4.55*], [3.20],
+  [*Total Score*], [1.00], [3.65], [3.45], [3.25], [*4.4*], [3.20],
 )
 
 ==== Result
