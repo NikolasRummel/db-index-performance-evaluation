@@ -96,72 +96,11 @@ Pepple  Todo
 Gonum Todo
 
 == Architectural Overview
-#figure(caption: "Component Diagramm of the Benchmark", image(width: 4cm, "../../assets/comp.jpeg"))
+The benchmal will consist of mainly two components. The `benchmark` package will be responsible for implementing the benchmark and the tests, while the `dbms` package will be responsible for implementing the index structures and the storage manager. 
+#figure(caption: "Component Diagramm of the Benchmark", image( "../../assets/comp.svg"))
 
 
-#figure(
-  caption: [ Architectural Overview of the Benchmark System.],
-  cetz.canvas(length: 1cm, {
-    import cetz.draw: *
-    
-    let box-style = (stroke: 0.8pt, radius: 2pt)
-    let fill-bench = blue.lighten(95%)
-    let fill-index = orange.lighten(95%)
-    let fill-storage = green.lighten(95%)
-    let fill-io = gray.lighten(95%)
-    let fill-pebble = purple.lighten(95%)
 
-    // --- BENCHMARK LAYER ---
-    rect((0, 8.5), (12, 10), fill: fill-bench, ..box-style, name: "bench_layer")
-    content("bench_layer", [*Benchmark* (Orchestrates all 3 Indexes)], size: 9pt)
-
-    // --- INDEX INTERFACE ---
-    rect((0, 6.8), (12, 7.8), fill: fill-index, ..box-style, name: "index_iface")
-    content("index_iface", [*Index Interface* (Common API: Get/Insert/Range)], size: 9pt)
-
-    // --- CUSTOM IMPLEMENTATIONS (Layered) ---
-    rect((0, 4.8), (3.5, 6.0), fill: white, ..box-style, name: "bt_comp")
-    content("bt_comp", [B-Tree \ (btree.go)], size: 8pt)
-    
-    rect((4.25, 4.8), (7.75, 6.0), fill: white, ..box-style, name: "bpt_comp")
-    content("bpt_comp", [B+ Tree \ (bptree.go)], size: 8pt)
-
-    // --- EXTERNAL WRAPPER ---
-    rect((8.5, 4.8), (12, 6.0), fill: fill-pebble, ..box-style, name: "lsm_comp")
-    content("lsm_comp", [LSM-Tree \ (Pebble Wrapper)], size: 8pt)
-
-    // --- SHARED ENGINE (Custom Only) ---
-    rect((0, 2.8), (7.75, 4.0), fill: fill-storage, ..box-style, name: "shared_engine")
-    content("shared_engine", [*Shared Tree Engine* \ (Generic Logic)], size: 8pt)
-
-    // --- STORAGE LAYERS ---
-    rect((0, 0.8), (7.75, 2.0), fill: fill-io, ..box-style, name: "pager_layer")
-    content("pager_layer", [*Custom Pager* \ (LRU Cache + Disk I/O)], size: 8pt)
-    
-    rect((8.5, 0.8), (12, 4.0), fill: fill-pebble, ..box-style, name: "pebble_internal")
-    content("pebble_internal", [*Pebble Internal* \ (Memtable, SSTables, \ Internal Cache)], size: 8pt)
-
-    // --- PHYSICAL DISK ---
-    rect((0, -1), (12, 0), fill: white, stroke: (dash: "dashed"), name: "disk")
-    content("disk", [OS File System (.bt, .bpt, .lsm files)])
-
-    // --- CONNECTORS ---
-    line("bench_layer.south", "index_iface.north", mark: (end: "stealth"))
-    
-    // Custom Tree path
-    line((1.75, 6.8), (1.75, 6.0), mark: (end: "stealth"))
-    line((6.0, 6.8), (6.0, 6.0), mark: (end: "stealth"))
-    line((1.75, 4.8), (1.75, 4.0), mark: (end: "stealth"))
-    line((6.0, 4.8), (6.0, 4.0), mark: (end: "stealth"))
-    line((3.87, 2.8), (3.87, 2.0), mark: (end: "stealth"))
-    line((3.87, 0.8), (3.87, 0), mark: (end: "stealth"))
-
-    // Pebble path
-    line((10.25, 6.8), (10.25, 6.0), mark: (end: "stealth"))
-    line((10.25, 4.8), (10.25, 4.0), mark: (end: "stealth"))
-    line((10.25, 0.8), (10.25, 0), mark: (end: "stealth"))
-  })
-) <fig-component-arch-fixed>
 
 == Buffer Manager Implementation
 
@@ -455,7 +394,7 @@ func (l *LSM) Insert(key int64, value []byte) error {
 The arguments for the `Set()` function are the key, the value and the options for the write operation. Here both key and value must be a byte slice, which is why the int64 key is encoded. Also, the `NoSync` option is used to make a fair comparison with the custom implementations since they also do not synchronously write to the disk.
 
 
-== Benchmark Design
+== Benchmark Implementation
 === Deterministic data generation
 === Workload design
 ==== T1: Point query lookup
