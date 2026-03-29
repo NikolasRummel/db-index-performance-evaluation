@@ -4,15 +4,14 @@
 #show: clean-dhbw.with(
   title: "Analysis and Comparison of Database Index Structures",
   authors: (
-    (name: "Nikolas Rummel", student-id: "7654321", course: "TINF23B6", course-of-studies: "Informatik", company: (
-      (name: "dmTECH GmbH", post-code: "76131", city: "Karlsruhe")
-    )),
+    (name: "Nikolas Rummel", student-id: "7654321", course: "TINF23B6", course-of-studies: "Informatik"),
     // (name: "Juan Pérez", student-id: "1234567", course: "TIM21", course-of-studies: "Mobile Computer Science", company: (
     //   (name: "ABC S.L.", post-code: "08005", city: "Barcelona", country: "Spain")
     // )),
   ),
   type-of-thesis: "Studienarbeit", // Bachelorarbeit, Masterarbeit, Studienarbeit, Projektarbeit
-  at-university: false, // if true the company name on the title page and the confidentiality statement are hidden
+  at-university: true, // if true the company name on the title page and the confidentiality statement are hidden
+  city: "Karlsruhe",
   bibliography: bibliography("sources.bib"),
   date: datetime.today(),
   glossary: glossary-entries, // displays the glossary terms defined in "glossary.typ"
