@@ -27,11 +27,15 @@ func ReadFlagsOrDefault() bench.Config {
 }
 
 func main() {
+	//input
 	cfg := ReadFlagsOrDefault()
 
+	// process
 	if err := bench.RunBenchmarks(cfg); err != nil {
 		log.Fatalf("benchmark failed: %v", err)
 	}
+
+	// output
 	if err := bench.PlotAll(cfg.OutDir); err != nil {
 		log.Fatalf("plot failed: %v", err)
 	}
