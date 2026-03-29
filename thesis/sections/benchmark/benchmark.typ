@@ -90,22 +90,53 @@ Inspired by the C programming language, Go is a statically typed, compiled langu
 With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languares like C++ and Rust may be more performant but are more complex to work with, which is why Go was choosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some @DBMS like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
 
 === Libraries
-==== LSM-Tree Implementation
-Pepple  Todo
-==== Plotting and Visualization
-Gonum Todo
+In order to implement the benchmark and the index structures, some libraries will be used to facilitate the implementation. As mentioned before, for the LSM-Tree implementation, an existing library will be used. In addition, some libraries will be used for plotting and visualization of the results. 
+
 
 == Architectural Overview
-The benchmal will consist of mainly two components. The `benchmark` package will be responsible for implementing the benchmark and the tests, while the `dbms` package will be responsible for implementing the index structures and the storage manager. 
+The benchmark will consist of mainly two components. The `benchmark` package will be responsible for implementing the benchmark and the tests, while the `dbms` package will be responsible for implementing the index structures and the storage manager. 
+
+
 #figure(caption: "Component Diagramm of the Benchmark", image( "../../assets/comp.svg"))
 
+=== Package `benchmark`
+The `benchmark` package will be responsible for implementing all tests and their execution. The `Benchmark Runner` will be responsible for executing the tests and collecting the results, while the `Dataset Generator` will be responsible for generating the dataset that will be used for the tests. The `Result Plotter` will be responsible for creating the visualizations of the results in form of graphs and charts.
 
+=== Package `dbms`
+The `dbms` package will be responsible for implementing the index structures and the buffer manager. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The `B-Tree`, `B+-Tree` and `LSM-Tree` components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
+
+Since only the B-Tree and B+-Tree will be implemented from scratch, the LSM-Tree component will be a wrapper and not use our buffer manager.
+
+
+=== Entry Point (main.go)
+The entry point of the application will be the `main.go` file, which will be responsible for initializing the benchmark and executing the tests. It follows the typical structure of a #gls("IPO") model:
+
+#figure(
+  caption: "Entry Point of the Application",
+  sourcecode[```go
+func main() {
+	//input
+	cfg := ReadFlagsOrDefault()
+
+	// process
+	if err := bench.RunBenchmarks(cfg); err != nil {
+		log.Fatalf("benchmark failed: %v", err)
+	}
+
+	// output
+	if err := bench.PlotAll(cfg.OutDir); err != nil {
+		log.Fatalf("plot failed: %v", err)
+	}
+}
+
+```],
+)
 
 
 == Buffer Manager Implementation
 
-The Pager component is responsible for managing the I/O operations to the disk. It provides a Read and Write API for the upcoming index implementations to read and write pages to the disk. 
-Also, an Open() function will be used to initialize a file with a page (Page 0) for storing metadata. This will be used to track the pageCount.
+The `Pager` component is responsible for managing the I/O operations to the disk. It provides a Read and Write API for the upcoming index implementations to read and write pages to the disk. 
+Also, an `Open()` function will be used to initialize a file with a page (Page 0) for storing metadata. This will be used to track the pageCount.
 #figure(
   caption: "Simplified Open() function of the Pager component.",
   sourcecode[```go
@@ -152,7 +183,7 @@ type lruCache struct {
 ```],
 )
 
-The detailied implementation can be found in the source code, but with this idea, the pager component now can use this cache e.g for its Read() function to first checks if the page is in the cache or if it needs to be read from the disk: 
+The detailied implementation can be found in the source code, but with this idea, the pager component now can use this cache e.g for its `Read()` function to first checks if the page is in the cache or if it needs to be read from the disk: 
 #figure(
   caption: "Read() function of the Pager component using the LRU cache.",
   sourcecode[```go
@@ -174,7 +205,7 @@ func (p *Pager) Read(id uint64) (*Page, error) {
 Now that we have a simple buffer manager implemented, we can use it for the implementation of the index structures. 
 
 == Index implementations
-In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for a easy comparison of the different index structures under the same workloads and conditions. The interface will include normal CRUD operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
+In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for a easy comparison of the different index structures under the same workloads and conditions. The interface will include normal #gls("CRUD") operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
 #figure(
   caption: "Ein Stück Quellcode",
   sourcecode[```go
@@ -204,7 +235,7 @@ To implement this generically, the strategy pattern @strategy will be used where
 
 #figure(caption: "Strategy pattern for tree implementations", image(width: 70%, "../../assets/tree_strategy.svg"))
 
-Here, the NodeAccessor interface defines the common operations which are different in the specific tree implementations. 
+Here, the `NodeAccessor` interface defines the common operations which are different in the specific tree implementations. 
 
 Now that we have a structure for the code, the actual design of the trees will be done. 
 
@@ -371,32 +402,91 @@ In the benchmark we will see how much faster this approach is for range queries 
 To implement the existing LSM-Tree implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
 
 To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface:
-```go
-type LSM struct {
-	db *pebble.DB
-}
-func Open(dir string) (*LSM, error) {
-	opts := &pebble.Options{}
-	db, err := pebble.Open(dir, opts)
-	if err != nil {
-		return nil, fmt.Errorf("lsm: open: %w", err)
-	}
-	return &LSM{db: db}, nil
-}
 
-```
+#figure(
+  caption: "Ein Stück Quellcode",
+  sourcecode[```go
+    type LSM struct {
+      db *pebble.DB
+    }
+    func Open(dir string) (*LSM, error) {
+      opts := &pebble.Options{}
+      db, err := pebble.Open(dir, opts)
+      if err != nil {
+        return nil, fmt.Errorf("lsm: open: %w", err)
+      }
+      return &LSM{db: db}, nil
+    }
+```],
+)
+
 Now to implement all CRUD operations, we can use the corresponding Pebble functions. For example, to implement the `Insert()` function, we can use the `Set()` function of the Pebble DB:
-```go
+
+#figure(
+  caption: "Ein Stück Quellcode",
+  sourcecode[```go
 func (l *LSM) Insert(key int64, value []byte) error {
 	return l.db.Set(encodeKey(key), value, pebble.NoSync)
 }
-```
+```],
+)
+
+
 The arguments for the `Set()` function are the key, the value and the options for the write operation. Here both key and value must be a byte slice, which is why the int64 key is encoded. Also, the `NoSync` option is used to make a fair comparison with the custom implementations since they also do not synchronously write to the disk.
 
 
 == Benchmark Implementation
+In the following, the implementation of the benchmark will be described. Therefore, all functional requirements will be implemented and the results will be visualized using plots and charts.
+
 === Deterministic data generation
-=== Workload design
+To ensure reproducibility of the benchmark results, a `Dataset` structure will be implemented. A static seed will be used to generate the same dataset for the benchmark every time it is run with the same parameters. This allows for a fair comparison of the different index structures under the same conditions and workloads. 
+
+#figure(
+  caption: "Dataset structure used in the benchmark",
+  sourcecode[```go
+
+type Dataset struct {
+    Keys   []int64
+    Values [][]byte
+    rng    *rand.Rand
+}
+
+// NewDataset initializes n keys and values with a specific seed and size.
+func NewDataset(n int, valueSize int, seed int64) *Dataset
+
+// SortedKeys returns a copy of all keys in ascending order.
+func (d *Dataset) SortedKeys() []int64
+
+// RandomKeys returns a random permutation of m keys for lookup tests.
+func (d *Dataset) RandomKeys(m int) []int64
+```],
+)
+
+In addition, it is possible to not just generate random keys, but also sorted ones, which is used for `T2` to evaluate the performance of range queries.
+
+=== Benchmark runner and tests
+The `Benchmark Runner` will be responsible for executing the tests and collecting the results. Each test will be implemented as a separate function that takes the dataset and the index structures as input and returns the results of the test. The `Benchmark Runner` will then execute each test for each index structure and writes the result in a csv file for plotting and visualization. 
+
+==== Memory usage monitoring
+In addition to measuring the performance of the index structures, the benchmark will also monitor the memory usage of each index structure during the tests. This will be done by using the `runtime` package in Go, which provides functions for monitoring the heap allocation during execution. 
+
+#figure(
+  caption: "Memory usage monitoring using the runtime package",
+  sourcecode[```go
+
+func getMemUsage() uint64 {
+	runtime.GC()
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	return m.Alloc
+}
+```],
+)
+
+The `getMemUsage()` function first triggers a garbage collection to get a more accurate measurement of the memory usage. Then it reads the `MemStats` structure to obtain the current heap allocation information, which will be returned. 
+
+During all tests, theis functon will be called every measure interval to also monitor the heap allocation over time, which will be visualized in the results as a seperate graph.
+
 ==== T1: Point query lookup
 ==== T2: Range query lookup
 ==== T3: Write throughput over time
