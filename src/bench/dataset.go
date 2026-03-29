@@ -12,6 +12,7 @@ type Dataset struct {
 	rng    *rand.Rand
 }
 
+// NewDataset initializes n keys and values with a specific seed and size.
 func NewDataset(n int, valueSize int, seed int64) *Dataset {
 	rng := rand.New(rand.NewSource(seed))
 
@@ -36,6 +37,7 @@ func NewDataset(n int, valueSize int, seed int64) *Dataset {
 	}
 }
 
+// SortedKeys returns a copy of all keys in ascending order.
 func (d *Dataset) SortedKeys() []int64 {
 	sorted := make([]int64, len(d.Keys))
 	copy(sorted, d.Keys)
@@ -43,6 +45,7 @@ func (d *Dataset) SortedKeys() []int64 {
 	return sorted
 }
 
+// RandomKeys returns a random permutation of m keys for lookup tests.
 func (d *Dataset) RandomKeys(m int) []int64 {
 	perm := d.rng.Perm(len(d.Keys))
 	out := make([]int64, m)
