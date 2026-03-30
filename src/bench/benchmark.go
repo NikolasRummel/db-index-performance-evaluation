@@ -57,6 +57,7 @@ func Indexes(cfg Config) []IndexDef {
 	}
 }
 
+// RunBenchmarks runs the full suite of benchmarks for all index implementations defined in the configuration.
 func RunBenchmarks(cfg Config) error {
 	indices := Indexes(cfg)
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
