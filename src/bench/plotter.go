@@ -100,15 +100,15 @@ func PlotT1(outDir string) error {
 	box := charts.NewBoxPlot()
 	box.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title:    "T1 — Point Query Latency",
+			Title:    "T1 — Point Query Responetime",
 			Subtitle: "Box: Q1/median/Q3 — Whiskers: min/p99",
 		}),
-		charts.WithYAxisOpts(opts.YAxis{Name: "Latency (ns)", Type: "log"}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "Responetime (ns)", Type: "log"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
 		charts.WithGridOpts(opts.Grid{Top: "20%"}),
 	)
-	box.SetXAxis(labels).AddSeries("Latency", boxItems)
+	box.SetXAxis(labels).AddSeries("Responetime", boxItems)
 
 	bar := charts.NewBar()
 	bar.SetGlobalOptions(
@@ -175,7 +175,7 @@ func PlotT2(outDir string) error {
 	line := charts.NewLine()
 	line.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title:    "T2 — Range Query Latency",
+			Title:    "T2 — Range Query Responetime",
 			Subtitle: "Total time to scan all keys in range",
 		}),
 		charts.WithYAxisOpts(opts.YAxis{Name: "Total time (ms)"}),
@@ -335,9 +335,9 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 	}
 
 	type point struct {
-		opCount int
-		latNs   int64
-		mem     uint64
+		opCount       int
+		responetimeNs int64
+		mem           uint64
 	}
 
 	byIndex := make(map[string][]point)
@@ -347,14 +347,14 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 	for _, rec := range records[1:] {
 		idxName := rec[0]
 		opCount, _ := strconv.Atoi(rec[1])
-		latNs, _ := strconv.ParseInt(rec[2], 10, 64)
+		responetimeNs, _ := strconv.ParseInt(rec[2], 10, 64)
 		mem, _ := strconv.ParseUint(rec[4], 10, 64)
 
 		if !seen[idxName] {
 			indexOrder = append(indexOrder, idxName)
 			seen[idxName] = true
 		}
-		byIndex[idxName] = append(byIndex[idxName], point{opCount, latNs, mem})
+		byIndex[idxName] = append(byIndex[idxName], point{opCount, responetimeNs, mem})
 	}
 
 	var xLabels []string
@@ -368,9 +368,9 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 	line.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
 			Title:    title,
-			Subtitle: "Latency (ns) over operation sequence",
+			Subtitle: "Responetime (ns) over operation sequence",
 		}),
-		charts.WithYAxisOpts(opts.YAxis{Name: "Latency (ns)", Type: "value"}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "Responetime (ns)", Type: "value"}),
 		charts.WithXAxisOpts(opts.XAxis{Name: "Operation Count"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true), Trigger: "axis"}),
 		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
@@ -383,7 +383,7 @@ func plotMixedWorkload(outDir, fileName, title, outHtml string) error {
 	for i, idxName := range indexOrder {
 		var items []opts.LineData
 		for _, p := range byIndex[idxName] {
-			items = append(items, opts.LineData{Value: p.latNs})
+			items = append(items, opts.LineData{Value: p.responetimeNs})
 		}
 		line.AddSeries(idxName, items,
 			charts.WithLineStyleOpts(opts.LineStyle{

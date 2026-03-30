@@ -55,7 +55,7 @@ func fillIndex(idx index.Index, ds Dataset) error {
 }
 
 // RunBenchmarkT1 executes the point query benchmark (T1).
-// It fills each index with a dataset and measures the latency and throughput of random point queries.
+// It fills each index with a dataset and measures the responetime and throughput of random point queries.
 func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 	ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
 	queryKeys := ds.RandomKeys(cfg.PointQueryCount)
@@ -98,13 +98,13 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 
 		fmt.Printf("[T1] %s: running %d point queries...\n", def.Name, cfg.PointQueryCount)
 
-		lats := make([]int64, 0, cfg.PointQueryCount)
+		responetimes := make([]int64, 0, cfg.PointQueryCount)
 		start := time.Now()
 
 		for _, key := range queryKeys {
 			t := time.Now()
 			val, e := idx.Get(key)
-			lats = append(lats, time.Since(t).Nanoseconds())
+			responetimes = append(responetimes, time.Since(t).Nanoseconds())
 			if e != nil {
 				fmt.Printf("[T1] %s: Get(%d) error: %v\n", def.Name, key, e)
 			} else if val == nil {
@@ -116,20 +116,20 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 		mem := getMemUsage()
 		_ = idx.Close()
 
-		sort.Slice(lats, func(i, j int) bool { return lats[i] < lats[j] })
+		sort.Slice(responetimes, func(i, j int) bool { return responetimes[i] < responetimes[j] })
 
 		r := T1Result{
 			Index:     def.Name,
 			NDataset:  cfg.DatasetSize,
 			NQueries:  cfg.PointQueryCount,
-			MinNs:     lats[0],
-			Q1Ns:      pct(lats, 25),
-			P50Ns:     pct(lats, 50),
-			Q3Ns:      pct(lats, 75),
-			MaxNs:     lats[len(lats)-1],
-			AvgNs:     avg(lats),
-			P95Ns:     pct(lats, 95),
-			P99Ns:     pct(lats, 99),
+			MinNs:     responetimes[0],
+			Q1Ns:      pct(responetimes, 25),
+			P50Ns:     pct(responetimes, 50),
+			Q3Ns:      pct(responetimes, 75),
+			MaxNs:     responetimes[len(responetimes)-1],
+			AvgNs:     avg(responetimes),
+			P95Ns:     pct(responetimes, 95),
+			P99Ns:     pct(responetimes, 99),
 			OpsPerSec: float64(cfg.PointQueryCount) / totalDuration.Seconds(),
 			TotalMs:   totalDuration.Milliseconds(),
 			MemBytes:  mem,
@@ -355,7 +355,7 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 
 	w := csv.NewWriter(f)
 	defer w.Flush()
-	_ = w.Write([]string{"index", "op_count", "latency_ns", "type", "mem_bytes"})
+	_ = w.Write([]string{"index", "op_count", "responetime_ns", "type", "mem_bytes"})
 
 	for _, def := range indices {
 		fmt.Printf("[%s] %s: Starting %d/%d workload...\n", testLabel, def.Name, readPercent, 100-readPercent)
@@ -378,11 +378,11 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 				key := ds.Keys[rng.Intn(len(ds.Keys))]
 				start := time.Now()
 				_, _ = idx.Get(key)
-				lat := time.Since(start).Nanoseconds()
+				responetime := time.Since(start).Nanoseconds()
 
 				if i%cfg.LogInterval == 0 {
 					mem := getMemUsage()
-					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(lat, 10), "read", strconv.FormatUint(mem, 10)})
+					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "read", strconv.FormatUint(mem, 10)})
 				}
 			} else {
 				// WRITE
@@ -392,11 +392,11 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 
 				start := time.Now()
 				_ = idx.Insert(newKey, val)
-				lat := time.Since(start).Nanoseconds()
+				responetime := time.Since(start).Nanoseconds()
 
 				if i%cfg.LogInterval == 0 {
 					mem := getMemUsage()
-					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(lat, 10), "write", strconv.FormatUint(mem, 10)})
+					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "write", strconv.FormatUint(mem, 10)})
 				}
 			}
 		}
@@ -419,18 +419,18 @@ func RunBenchmarkT5(indices []IndexDef, cfg Config) error {
 
 //---
 
-func avg(lats []int64) int64 {
+func avg(responetimes []int64) int64 {
 	var sum int64
-	for _, v := range lats {
+	for _, v := range responetimes {
 		sum += v
 	}
-	return sum / int64(len(lats))
+	return sum / int64(len(responetimes))
 }
 
-func pct(lats []int64, p int) int64 {
-	i := (p * len(lats)) / 100
-	if i >= len(lats) {
-		i = len(lats) - 1
+func pct(responetimes []int64, p int) int64 {
+	i := (p * len(responetimes)) / 100
+	if i >= len(responetimes) {
+		i = len(responetimes) - 1
 	}
-	return lats[i]
+	return responetimes[i]
 }
