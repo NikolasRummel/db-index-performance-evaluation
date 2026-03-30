@@ -31,6 +31,7 @@ const (
 	leafCellHeader   = 8 + 2 // key + valLen
 )
 
+// BPTreeAcc implements the shared.NodeAccessor interface for a B+ tree.
 type BPTreeAcc struct{}
 
 func (BPTreeAcc) CellSize(isLeaf bool, value []byte) int {
@@ -90,8 +91,10 @@ func (BPTreeAcc) LinkLeaves(left, right *pager.Page, newRightID uint32, oldNext 
 
 // ─── BPTree ───────────────────────────────────────────────────────────────────
 
+// BPTree implements a B+ tree by embedding the generic shared.Tree.
 type BPTree struct{ shared.Tree }
 
+// Open opens a B+ tree at the given path, creating it if it does not exist.
 func Open(path string, cachePages int) (*BPTree, error) {
 	pg, err := pager.Open(path+".bpt", cachePages)
 	if err != nil {
@@ -145,6 +148,7 @@ func (t *BPTree) Close() error {
 	return t.Pg.Close()
 }
 
+// RangeIterator allows scanning over a range of keys in the B+ tree.
 type RangeIterator struct {
 	tree   *BPTree
 	end    int64
@@ -175,6 +179,7 @@ func (t *BPTree) Range(start, end int64) (index.Iterator, error) {
 	}, nil
 }
 
+// Next advances the iterator to the next key-value pair.
 func (it *RangeIterator) Next() bool {
 	for it.leafID != uint64(btpage.InvalidPage) {
 		if it.currPg == nil {
@@ -204,7 +209,14 @@ func (it *RangeIterator) Next() bool {
 	return false
 }
 
-func (it *RangeIterator) Key() int64    { return it.k }
+// Key returns the key of the current key-value pair.
+func (it *RangeIterator) Key() int64 { return it.k }
+
+// Value returns the value of the current key-value pair.
 func (it *RangeIterator) Value() []byte { return it.v }
-func (it *RangeIterator) Error() error  { return it.err }
-func (it *RangeIterator) Close() error  { return nil }
+
+// Error returns the first error encountered by the iterator, if any.
+func (it *RangeIterator) Error() error { return it.err }
+
+// Close releases resources associated with the iterator.
+func (it *RangeIterator) Close() error { return nil }

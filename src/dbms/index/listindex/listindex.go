@@ -1,3 +1,4 @@
+// Package listindex implements a simple in-memory list-based index for testing.
 package listindex
 
 import (
@@ -9,15 +10,19 @@ import (
 
 var _ index.Index = (*ListIndex)(nil)
 
+// Data represents a key-value pair in the ListIndex.
 type Data struct {
 	Key int64
 	Val []byte
 }
 
+// ListIndex is a simple in-memory index that stores data in a slice.
+// It is intended for testing and small datasets.
 type ListIndex struct {
 	Data []Data
 }
 
+// NewListIndex creates a new empty ListIndex.
 func NewListIndex() *ListIndex {
 	return &ListIndex{
 		Data: make([]Data, 0),
@@ -72,6 +77,7 @@ type ListIterator struct {
 	end   int64
 }
 
+// Next advances the iterator to the next key-value pair.
 func (it *ListIterator) Next() bool {
 	it.cur++
 	for it.cur < len(it.data) {
@@ -83,7 +89,14 @@ func (it *ListIterator) Next() bool {
 	return false
 }
 
-func (it *ListIterator) Key() int64    { return it.data[it.cur].Key }
+// Key returns the key of the current key-value pair.
+func (it *ListIterator) Key() int64 { return it.data[it.cur].Key }
+
+// Value returns the value of the current key-value pair.
 func (it *ListIterator) Value() []byte { return it.data[it.cur].Val }
-func (it *ListIterator) Error() error  { return nil }
-func (it *ListIterator) Close() error  { return nil }
+
+// Error returns the first error encountered by the iterator, if any.
+func (it *ListIterator) Error() error { return nil }
+
+// Close releases resources associated with the iterator.
+func (it *ListIterator) Close() error { return nil }

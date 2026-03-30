@@ -12,6 +12,7 @@ import (
 	"github.com/cockroachdb/pebble"
 )
 
+// LSM wraps the Pebble storage engine to implement the Index interface.
 type LSM struct {
 	db *pebble.DB
 }
@@ -74,6 +75,7 @@ func (l *LSM) Range(start, end int64) (index.Iterator, error) {
 	return &rangeIterator{iter: iter, first: true}, nil
 }
 
+// Levels returns a string describing the current state of the LSM levels.
 func (l *LSM) Levels() string {
 	m := l.db.Metrics()
 	var sb strings.Builder
@@ -111,6 +113,7 @@ type rangeIterator struct {
 	err   error
 }
 
+// Next advances the iterator to the next key-value pair.
 func (it *rangeIterator) Next() bool {
 	var valid bool
 	if it.first {
@@ -135,7 +138,14 @@ func (it *rangeIterator) Next() bool {
 	return true
 }
 
-func (it *rangeIterator) Key() int64    { return it.key }
+// Key returns the key of the current key-value pair.
+func (it *rangeIterator) Key() int64 { return it.key }
+
+// Value returns the value of the current key-value pair.
 func (it *rangeIterator) Value() []byte { return it.val }
-func (it *rangeIterator) Error() error  { return it.err }
-func (it *rangeIterator) Close() error  { return it.iter.Close() }
+
+// Error returns the first error encountered by the iterator, if any.
+func (it *rangeIterator) Error() error { return it.err }
+
+// Close releases resources associated with the iterator.
+func (it *rangeIterator) Close() error { return it.iter.Close() }

@@ -1,3 +1,5 @@
+// Package shared provides a generic B-tree engine that can be customized
+// via the NodeAccessor interface to implement different tree variants (e.g., B-tree, B+ tree).
 package shared
 
 import (
@@ -10,20 +12,32 @@ import (
 	"github.com/btree-query-bench/bmark/dbms/pager"
 )
 
+// NodeAccessor defines the strategy for accessing and modifying cells within a page.
+// This interface allows the shared Tree engine to remain agnostic of the specific
+// cell format and tree-specific logic (like leaf linkage or copy-up).
 type NodeAccessor interface {
+	// CellSize returns the size of a cell in bytes for the given node type and value.
 	CellSize(isLeaf bool, value []byte) int
 
+	// ReadCell decodes the i-th cell from the given page.
+	// It returns the key, value (if present), and the left child page ID (for internal nodes).
 	ReadCell(p *pager.Page, i int, isLeaf bool) (key int64, value []byte, leftChild uint32)
 
+	// WriteCell encodes and writes a cell at the specified offset in the page.
 	WriteCell(p *pager.Page, off int, key int64, value []byte, leftChild uint32, isLeaf bool)
 
-	OverwriteValue(p *pager.Page, i int, newVal []byte, isLeaf bool) // ERROR IF NEW VAL DOES NOT FIT IN OLD SPACE!!
+	// OverwriteValue updates the value of the i-th cell in-place.
+	// WARNING: This assumes the new value fits in the space allocated for the old value.
+	OverwriteValue(p *pager.Page, i int, newVal []byte, isLeaf bool)
 
+	// CopyUpLeaves returns true if the tree implementation uses copy-up semantics for leaf splits.
 	CopyUpLeaves() bool
 
+	// LinkLeaves performs implementation-specific leaf linkage after a split.
 	LinkLeaves(left, right *pager.Page, newRightID uint32, oldNext uint32)
 }
 
+// Tree represents a generic B-tree structure managed by a Pager.
 type Tree struct {
 	Pg     *pager.Pager
 	RootID uint32
@@ -42,6 +56,7 @@ func (t *Tree) cellSize(p *pager.Page, value []byte) int {
 	return t.Acc.CellSize(isLeaf(p), value)
 }
 
+// AppendCell adds a new cell to the end of the specified page.
 func (t *Tree) AppendCell(p *pager.Page, key int64, value []byte, leftChild uint32) {
 	n := btpage.NumCells(p)
 	off := btpage.AllocCell(p, t.Acc.CellSize(isLeaf(p), value))
@@ -80,6 +95,7 @@ func FindIdx(p *pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
 	return lo
 }
 
+// Get retrieves the value associated with the specified key from the tree.
 func (t *Tree) Get(key int64) ([]byte, error) {
 	curr := uint64(t.RootID)
 	for {
@@ -103,6 +119,8 @@ func (t *Tree) Get(key int64) ([]byte, error) {
 	}
 }
 
+// Insert adds a key-value pair to the tree. If the key already exists,
+// its value is updated.
 func (t *Tree) Insert(key int64, value []byte) error {
 	mk, mv, rightID, split, err := t.insertRec(uint64(t.RootID), key, value)
 	if err != nil {
@@ -279,6 +297,7 @@ func (t *Tree) splitNode(id uint64, p *pager.Page, n, idx int, key int64, value 
 	return promoted.Key, promotedVal, newID, true, nil
 }
 
+// FindLeaf locates the leaf page that would contain the given key.
 func (t *Tree) FindLeaf(key int64) (uint64, error) {
 	curr := uint64(t.RootID)
 	for {
@@ -295,6 +314,7 @@ func (t *Tree) FindLeaf(key int64) (uint64, error) {
 	}
 }
 
+// WriteHeader flushes the tree's metadata (e.g., RootID) to the first page.
 func (t *Tree) WriteHeader() error {
 	p, err := t.Pg.Read(1)
 	if err != nil {
@@ -304,6 +324,7 @@ func (t *Tree) WriteHeader() error {
 	return t.Pg.Write(1, p)
 }
 
+// ReadHeader loads the tree's metadata from the first page.
 func (t *Tree) ReadHeader() error {
 	p, err := t.Pg.Read(1)
 	if err != nil {
@@ -314,6 +335,8 @@ func (t *Tree) ReadHeader() error {
 }
 
 // --- Visualization and Info ---
+
+// Height returns the current height of the tree.
 func (t *Tree) Height() int {
 	curr := uint64(t.RootID)
 	h := 1
@@ -328,6 +351,7 @@ func (t *Tree) Height() int {
 	}
 }
 
+// Print exports the tree structure to a DOT file and generates a PNG visualization.
 func (t *Tree) Print(name string) {
 	dotPath := fmt.Sprintf("results/%s.dot", name)
 	pngPath := fmt.Sprintf("results/%s.png", name)
@@ -346,6 +370,8 @@ func (t *Tree) Print(name string) {
 
 	fmt.Printf("Tree erfolgreich exportiert nach: %s\n", pngPath)
 }
+
+// ExportDOT generates a Graphviz DOT representation of the tree.
 func (t *Tree) ExportDOT(filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {

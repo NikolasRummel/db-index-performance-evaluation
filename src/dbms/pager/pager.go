@@ -1,3 +1,4 @@
+// Package pager provides a persistent storage abstraction using fixed-size pages.
 package pager
 
 import (
@@ -7,21 +8,22 @@ import (
 )
 
 const (
-	PageSize = 4096 // 4 KB pages
+	// PageSize is the fixed size of a single page in bytes (4 KB).
+	PageSize = 4096
 )
 
 // Page is a raw 4 KB block read from or written to disk.
 type Page [PageSize]byte
 
-// Pager manages a file of fixed-size pages and caches recently used ones.
+// Pager manages a file of fixed-size pages, providing caching and allocation.
 type Pager struct {
 	file      *os.File
 	cache     *lruCache
 	pageCount uint64 // total number of pages ever allocated
 }
 
-// Open opens (or creates) a pager backed by the given file.
-// cachePages is the number of pages to hold in the LRU cache.
+// Open opens (or creates) a pager backed by the file at the given path.
+// cachePages specifies the number of pages to hold in the internal LRU cache.
 func Open(path string, cachePages int) (*Pager, error) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {

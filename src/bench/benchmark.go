@@ -1,3 +1,5 @@
+// Package bench provides benchmarking tools and test cases for comparing
+// different database index implementations.
 package bench
 
 import (
@@ -10,6 +12,7 @@ import (
 	"github.com/btree-query-bench/bmark/dbms/index/lsm"
 )
 
+// Config defines the configuration parameters for the benchmark suite.
 type Config struct {
 	Seed            int64
 	OutDir          string
@@ -24,11 +27,13 @@ type Config struct {
 	ValueSize       int
 }
 
+// IndexDef defines an index implementation and a factory function to create it.
 type IndexDef struct {
 	Name    string
 	NewFunc func(path string) (index.Index, error)
 }
 
+// Indexes returns a slice of index implementations to be benchmarked.
 func Indexes(cfg Config) []IndexDef {
 	return []IndexDef{
 		{

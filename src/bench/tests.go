@@ -54,6 +54,8 @@ func fillIndex(idx index.Index, ds Dataset) error {
 	return nil
 }
 
+// RunBenchmarkT1 executes the point query benchmark (T1).
+// It fills each index with a dataset and measures the latency and throughput of random point queries.
 func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 	ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
 	queryKeys := ds.RandomKeys(cfg.PointQueryCount)
@@ -172,6 +174,8 @@ var t2Header = []string{
 	"total_ms", "ops_per_sec", "mem_bytes",
 }
 
+// RunBenchmarkT2 executes the range query benchmark (T2).
+// It fills each index and measures the performance of scanning various range sizes.
 func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 	ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
 	sortedKeys := ds.SortedKeys()
@@ -277,6 +281,8 @@ var t3Header = []string{
 	"index", "op_count", "ops_per_sec", "cumulative_ops", "mem_bytes",
 }
 
+// RunBenchmarkT3 executes the write throughput benchmark (T3).
+// It measures how quickly each index can ingest new random key-value pairs.
 func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 	if err := os.MkdirAll(cfg.OutDir, 0755); err != nil {
 		return fmt.Errorf("create out dir: %w", err)
@@ -339,6 +345,7 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 	return nil
 }
 
+// RunMixedWorkload executes a benchmark with a mix of read and write operations.
 func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel string, fileName string) error {
 	f, err := os.Create(filepath.Join(cfg.OutDir, fileName))
 	if err != nil {
@@ -398,10 +405,14 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 	return nil
 }
 
+// RunBenchmarkT4 executes the read-heavy mixed workload benchmark (T4).
+// It uses a 95% read / 5% write ratio.
 func RunBenchmarkT4(indices []IndexDef, cfg Config) error {
 	return RunMixedWorkload(indices, cfg, 95, "T4", "t4_read_heavy.csv")
 }
 
+// RunBenchmarkT5 executes the write-heavy mixed workload benchmark (T5).
+// It uses a 5% read / 95% write ratio.
 func RunBenchmarkT5(indices []IndexDef, cfg Config) error {
 	return RunMixedWorkload(indices, cfg, 5, "T5", "t5_write_heavy.csv")
 }

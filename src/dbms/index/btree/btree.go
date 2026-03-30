@@ -23,6 +23,7 @@ import (
 
 const cellHeader = 4 + 8 + 2 // leftChild + key + valLen
 
+// BTreeAcc implements the shared.NodeAccessor interface for a B-tree.
 type BTreeAcc struct{}
 
 func (BTreeAcc) CellSize(_ bool, value []byte) int { return cellHeader + len(value) }
@@ -54,8 +55,10 @@ func (BTreeAcc) CopyUpLeaves() bool { return false }
 
 func (BTreeAcc) LinkLeaves(_, _ *pager.Page, _, _ uint32) {}
 
+// BTree implements a B-tree by embedding the generic shared.Tree.
 type BTree struct{ shared.Tree }
 
+// Open opens a B-tree at the given path, creating it if it does not exist.
 func Open(path string, cachePages int) (*BTree, error) {
 	pg, err := pager.Open(path+".bt", cachePages)
 	if err != nil {
@@ -90,6 +93,7 @@ type frame struct {
 	subtreeDone bool // true after the left subtree of idx has been fully visited
 }
 
+// RangeIterator allows scanning over a range of keys in the B-tree.
 type RangeIterator struct {
 	tree  *BTree
 	end   int64
@@ -119,6 +123,7 @@ func (t *BTree) Range(start, end int64) (index.Iterator, error) {
 	return it, nil
 }
 
+// Next advances the iterator to the next key-value pair.
 func (it *RangeIterator) Next() bool {
 	for len(it.stack) > 0 {
 		top := len(it.stack) - 1
@@ -173,7 +178,14 @@ func (it *RangeIterator) Next() bool {
 	return false
 }
 
-func (it *RangeIterator) Key() int64    { return it.k }
+// Key returns the key of the current key-value pair.
+func (it *RangeIterator) Key() int64 { return it.k }
+
+// Value returns the value of the current key-value pair.
 func (it *RangeIterator) Value() []byte { return it.v }
-func (it *RangeIterator) Error() error  { return it.err }
-func (it *RangeIterator) Close() error  { return nil }
+
+// Error returns the first error encountered by the iterator, if any.
+func (it *RangeIterator) Error() error { return it.err }
+
+// Close releases resources associated with the iterator.
+func (it *RangeIterator) Close() error { return nil }

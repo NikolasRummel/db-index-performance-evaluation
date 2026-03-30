@@ -24,6 +24,7 @@ const (
 	chartHeight = "500px"
 )
 
+// PlotAll generates HTML visualizations for all benchmark results in the specified directory.
 func PlotAll(outDir string) error {
 	allPlots := []struct {
 		file  string
@@ -52,6 +53,7 @@ func PlotAll(outDir string) error {
 	return nil
 }
 
+// PlotT1 generates a visualization for the point query benchmark (T1).
 func PlotT1(outDir string) error {
 	f, err := os.Open(fmt.Sprintf("%s/t1_point_query.csv", outDir))
 	if err != nil {
@@ -127,6 +129,7 @@ func PlotT1(outDir string) error {
 	return renderPage(page, fmt.Sprintf("%s/t1.html", outDir), "[T1]")
 }
 
+// PlotT2 generates a visualization for the range query benchmark (T2).
 func PlotT2(outDir string) error {
 	f, err := os.Open(fmt.Sprintf("%s/t2_range_query.csv", outDir))
 	if err != nil {
@@ -215,6 +218,7 @@ func PlotT2(outDir string) error {
 	return renderPage(page, fmt.Sprintf("%s/t2.html", outDir), "[T2]")
 }
 
+// PlotT3 generates a visualization for the write throughput benchmark (T3).
 func PlotT3(outDir string) error {
 	f, err := os.Open(fmt.Sprintf("%s/t3_write_throughput.csv", outDir))
 	if err != nil {
@@ -299,6 +303,7 @@ func PlotT3(outDir string) error {
 	return renderPage(page, fmt.Sprintf("%s/t3.html", outDir), "[T3]")
 }
 
+// PlotT4 generates a visualization for the read-heavy mixed workload benchmark (T4).
 func PlotT4(outDir string) error {
 	return plotMixedWorkload(
 		outDir,
@@ -308,6 +313,7 @@ func PlotT4(outDir string) error {
 	)
 }
 
+// PlotT5 generates a visualization for the write-heavy mixed workload benchmark (T5).
 func PlotT5(outDir string) error {
 	return plotMixedWorkload(
 		outDir,

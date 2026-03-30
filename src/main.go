@@ -7,6 +7,7 @@ import (
 	"github.com/btree-query-bench/bmark/bench"
 )
 
+// ReadFlagsOrDefault parses command-line flags or returns a Config with default values.
 func ReadFlagsOrDefault() bench.Config {
 	cfg := bench.Config{}
 
