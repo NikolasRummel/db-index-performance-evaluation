@@ -20,11 +20,7 @@ An index is a data stucture allowing to quickly locate the data we are looking f
 
 == Types of Database Index Structures
 
-As mentoned, there are different data structures which can be used as index structures in a database system. In the following, the most common index structures will be explained.
-
-
-=== Primary, Secondary and Clustered Indexes?
-
+As mentoned, there are different data structures which can be used as index structures in a database system. In the following, two of the most common index structures, B-Trees and LSM-Trees, will be explained in more detail.
 
 === Search Tree-Based Index Structures <search-trees>
 #let p = $p$
@@ -239,14 +235,16 @@ The advantage now is that all leaf nodes are linked together in a linked list, a
   })
 ) <b-plus-disk-mapping>
 
-Todo? Drawback: standard disk-based index structures such as the B-tree will effectively double the I/O cost of the
-transaction to maintain an index such as this in real time, increasing the total system cost up to
-fifty percent @lsm_original[p. 351].
+Now, for a lookup, we follow the same logic like in a normal B-Tree, but will wend in a leaf page in order to get the reccord pointer to the actual data record on the disk. For a range query, we can now follow the pointer to the next leaf node after finding the start key in the leaf node, which allows for efficient range queries by traversing the linked list of leaf nodes. 
 
+
+==== Drawbacks of B-Trees <drawbacks-btree>
+However, the B+-Tree (and B-Tree as well) still is not a perfect solution for every possible scenario and they have some drawbacks. First, they are not optimized for write-heavy workloads, since each write operation requires multiple disk I/O operations to maintain the index structure on disk @lsm_original[p. 351]. This will effectively double the I/O cost of the
+transaction to maintain an index such as this in real time, increasing the total system cost up to fifty percent @lsm_original[p. 351]. Secondly, after a page split a B-Tree, some space in those pages is wasted, which leads to fragmentation @kleppmann[p. 84]. In addition, those B-Trees are not crash-safe since they update in place, meaning that in case of a crash while a merge or split is happening, the tree could be left in an inconsistent state @lsm_original[p. 351]. To mitigate this problem, a write-ahead log can be used, which would lead do a lot of write amplification, since we would have to write the log entry and then write the actual data to the disk, which would double the write cost. @kleppmann[p. 82]
 
 
 === LSM-Trees (Log-Structured Merge Trees)
-Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed for high write throughput @lsm_original[p. 351] and was originally proposed by O'Neil et al. in 1996 @lsm_original.
+Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed for high write throughput @lsm_original[p. 351] and was originally proposed by O'Neil et al. in 1996 @lsm_original. The reason for the design of a new index structure was that the standard disk-based index structures such as the B-tree have some those drawbacks mentioned in @drawbacks-btree, which are especially problematic for write-heavy workloads. LSM-Trees are designed to optimize write performance by batching writes together and writing them sequentially to disk, which minimizes the number of disk I/O operations required for each write and thus significantly improves write performance @lsm_original[p. 351]. 
 
 ==== LSM-Tree Structure according to O'Neil et al.
 The fundamental concept of an LSM-Tree is based to batch writes together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
@@ -263,8 +261,6 @@ This is done using a hierachy of components (also called trees):
 *Deletion* of a key-value pair in a LSM-Tree is also an insertion, but instead of writing the new value, we write a special tombstone value to the $C_0$ component. This tombstone value indicates that the key has been deleted, and when the $C_0$ component is merged with the $C_1$ component, the old value will be removed from the on-disk component.
 
 A *Lookup* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found, a tombstone appears or all components have been searched. This can lead to inefficient read performance, since we might have to search through multiple on-disk components, which is a major drawback of LSM-Trees. To mitigate this problem, LSM-Trees often use Bloom filters, a data structure to quickly check if a key is likely to be present in an on-disk component before performing a more expensive search @kleppmann[p. 79].  
-
-
 
 As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. This process is then repeated for the other on-disk components $C_k$ with $k in N$ as well, where we merge the smaller, higher-level component $C_n$ with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$ component @lsm_original[p. 355]:
 
@@ -413,4 +409,4 @@ An example of this generalized rolling merge process is shown in the following f
 ) <lsm-rolling-merge2>
 
 
-While LSM-Tree withthe rolling merge process ensures efficient sequential writes, it comes with some drawbacks. First of all, since its a append-only structure, it leads to increased storage requirements due to the presence of multiple on-disk components and tombstone markers for deletions. Secondly, this leads to a high write amplification since data exists in multiple components and needs to be merged multiple times. Lastly, the merge process takes some ressources and therefore decrese the overall performance of the tree, what we will se in TODO: T3 benchmark data chatt
+While LSM-Tree withthe rolling merge process ensures efficient sequential writes, it comes with some drawbacks. First of all, since its a append-only structure, it leads to increased storage requirements due to the presence of multiple on-disk components and tombstone markers for deletions. Secondly, this leads to a high write amplification since data exists in multiple components and needs to be merged multiple times. Lastly, the merge process takes some ressources and therefore decrese the overall performance of the tree, what we will se in TODO: T3 benchmark data chart
