@@ -8,12 +8,11 @@ The goal of this chapter is to describe the design of the benchmark and the impl
 == Requirements 
 In order to design the benchmark, we can use typical software engineering practices and first define the requirements for the benchmark. These requirements will guide the design and implementation of the benchmark and ensure that it meets the goals of the thesis. The requirements can be categorized into functional requirements, which describe what the benchmark should do, and non-functional requirements, which describe how the benchmark should perform.
 
-=== Functional Requirements
+=== Functional Requirements <fr>
 For the benchmark, the following index structures will be implemented and compared:
 - *B-Tree:* A normal B-Tree where data is stored in both internal and leaf nodes should be implemented like described in @btree
-- *B+-Tree:* A B+-Tree where data is only stored in linked leaf nodes based in order to compare the range query performance. Moreove because B+-Trees are the most common index structure used in DBMS.
+- *B+-Tree:* A B+-Tree where data is only stored in linked leaf nodes based in order to compare the range query performance. Moreove because B+-Trees are the most common index structure used in #gls("DBMS").
 - *LSM-Tree:* Since there is not enough time to implement a full LSM-Tree from scratch, an existing implementation will be used. For this, some evaluation will be done on existing Go libraries and then the best fitting one will be choosen to be used. 
-- *No index:* As a baseline, a simple scan of the data without using any index will be implemented to compare the performance of the index structures against a full scan.
 
 In order to compare the performance of these index structures and answering the research questions, the benchmark will consist of multiple tests (T1-T5) that will evaluate different aspects of the index structures under different workloads. The following will be designed to measure the following performance metrics:
 
@@ -363,7 +362,7 @@ return NIL
 Here, the B-Tree checks every node for the key since internal nodes also store values. We start at the root node and search for the key. If we can find it in the current node (curr), we can return the value. If not we go to the subtree with via the childPointer. If we reach the leaf and still did not found the key, we return NIL since the key does not exist in the tree. 
 
 The B+-Tree on the other hand first needs to find the leaf node where the key would be stored and then search for the key in the leaf node by following the child pointers until we reach a leaf node. Once we are at the leaf node, we search for the key and return the value if we find it, otherwise we return NIL.
-==== Range Query
+==== Range Query <rq>
 
 #figure(
   caption: "Range Next() pseudocode for B-Tree (left) and B+-Tree (right)",
@@ -487,9 +486,107 @@ The `getMemUsage()` function first triggers a garbage collection to get a more a
 
 During all tests, theis functon will be called every measure interval to also monitor the heap allocation over time, which will be visualized in the results as a seperate graph.
 
-==== T1: Point query lookup
-==== T2: Range query lookup
-==== T3: Write throughput over time
-==== T4: Mixed workload
-==== T5: Memory usage
-=== Generating plots and visualizations
+
+==== T1: Point Query Performance
+In order to implement the point query test, a random dataset is generated with 10 Million key-value pairs and each index structure is pre-populated with this dataset. 
+Next, 50.000 random keys are selected from the dataset and the response time for retrieving the value associated with each key is measured for each index structure. The results are then used to also calculate all needed metrics like the average, median and interquartile range for the box plot visualization, which are written to a csv file for plotting.
+
+#figure(
+  caption: "Simplified implementation of the Point Query Benchmark (T1)",
+  sourcecode[```go
+func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
+ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed) 
+queryKeys := ds.RandomKeys(cfg.PointQueryCount)
+
+for _, def := range indices {
+    // 1. Initialize and fill index
+    idx, _ := def.NewFunc(filepath.Join(cfg.DataDir, def.Name))
+    fillIndex(idx, *ds)
+
+    responetimes := make([]int64, 0, cfg.PointQueryCount)
+    start := time.Now()
+
+    // 2. Execution loop with individual latency measurement
+    for _, key := range queryKeys {
+        t := time.Now()
+        _, _ = idx.Get(key)
+        responetimes = append(responetimes, time.Since(t).Nanoseconds())
+    }
+
+    totalDuration := time.Since(start)
+    memUsage := getMemUsage()
+    idx.Close()
+
+    // 3. Statistical aggregation
+    sort.Slice(responetimes, func(i, j int) bool { return responetimes[i] < responetimes[j] })
+    
+    result := T1Result{
+        Index:     def.Name,
+        P50Ns:     pct(responetimes, 50),
+        P99Ns:     pct(responetimes, 99),
+        OpsPerSec: float64(cfg.PointQueryCount) / totalDuration.Seconds(),
+        MemBytes:  memUsage,
+    }
+    // Save result to CSV...
+}
+return nil
+}
+```],
+)
+
+==== T2: Range Query Performance
+Here, the implementation is similar to T1, but instead of measuring the response time for retrieving a single value, the response time for retrieving all key-value pairs within a specified key range is measured. During this test, not only one key range is used, but multiple ranges of always doublig size are used to evaluate how the performance of the index structures changes as the size of the result set increases. As default value, the minimum range is 4096 keys and the maximum is $4096*2^10$. 
+
+The detailed implementation can be found in the source code, but the main idea is to use the `Range()` function of the index interface to get an iterator for the specified key range and then use the `Next()` function of the iterator to retrieve all key-value pairs in the range while measuring the response time. In theorie, as we saw in @rq, the B+-Tree should perform much better than the B-Tree for larger result sets since it only needs to traverse the linked list of leaf nodes, while the B-Tree needs to traverse both internal and leaf nodes. 
+
+==== T3: Write Throughput Over Time
+This test should mimic a workload in for instance time series database where new data is continuously inserted into the database. Unlike the static lookups in T1 and T2, T3 focuses on the write path and the overhead associated with structural maintenance—such as B-Tree page splits or LSM-Tree compactions—under continuous load.
+
+The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number if random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a szenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the throughput then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start")) $.
+
+#figure(
+  caption: [Core logic for windowed write throughput measurement (T3)],
+  sourcecode[```go
+  // Loop until total number of write operations is reached
+  for i := 0; i < cfg.WriteOpsTotal; i++ { 
+      key := rng.Int63()
+      val := generateRandomValue(cfg.ValueSize)
+
+      // Execute the insertion
+      idx.Insert(key, val)
+      windowOps++
+
+      // Calculate throughput once the window size is reached
+      if windowOps >= cfg.WriteOpsWindow {
+          duration := time.Since(windowStart).Seconds()
+          opsPerSec := float64(windowOps) / duration
+          memUsage := getMemUsage()
+          
+          // Record results (Throughput and Memory) for this interval
+          windowStart = time.Now()
+          windowOps = 0
+      }
+  }
+```],
+)
+
+In this test, the LSM-Tree should perform much better than the B-Tree and B+-Tree since it can write new data to the in-memory component without needing to immediately update the on-disk structure, while the B-Tree and B+-Tree need to perform page splits and other maintenance operations that can significantly degrade write performance under continuous load. 
+
+
+==== T4 & T5: Mixed Workload Analysis
+In addition to the pure read and write tests, T4 and T5 will evaluate the performance of the index structures under a mixed workload that includes both read and write operations. Again, random keys and values will be generated to mimic a realistic workload. A generic method of the mixed workload test looks similar to T1, but with a stochastic selection of read and write operations based on a predefined read/write ratio. 
+
+This method is then called for both, T4 and T5, but with a 95/5 read/write ratio for T4 and a 5/95 read/write ratio for T5.
+
+#figure(
+  caption: "Encapsulation of the mixed workload execution into a unified function for T4 and T5 benchmarks",
+  sourcecode[```go
+  func RunBenchmarkT4(indices []IndexDef, cfg Config) error {
+    return RunMixedWorkload(indices, cfg, 95, "T4", "t4_read_heavy.csv")
+  }
+  func RunBenchmarkT5(indices []IndexDef, cfg Config) error {
+    return RunMixedWorkload(indices, cfg, 5, "T5", "t5_write_heavy.csv")
+  }
+```],
+)
+
