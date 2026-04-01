@@ -25,6 +25,8 @@ type Config struct {
 	MixedOpsTotal   int
 	LogInterval     int
 	ValueSize       int
+	T2StartSize     int
+	T2MaxSize       int
 }
 
 // IndexDef defines an index implementation and a factory function to create it.

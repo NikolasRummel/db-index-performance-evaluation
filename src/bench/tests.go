@@ -210,7 +210,7 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 		}
 
 		var t2Sizes []int
-		for s := 4096; s <= 500_000 && s <= len(sortedKeys); s *= 2 {
+		for s := cfg.T2StartSize; s <= cfg.T2MaxSize && s <= len(sortedKeys); s *= 2 {
 			t2Sizes = append(t2Sizes, s)
 		}
 
