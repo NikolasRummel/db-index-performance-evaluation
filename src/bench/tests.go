@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strconv"
 	"time"
@@ -28,21 +27,13 @@ type T1Result struct {
 	P99Ns     int64
 	OpsPerSec float64
 	TotalMs   int64
-	MemBytes  uint64
 }
 
 var t1Header = []string{
 	"index", "n_dataset", "n_queries",
 	"min_ns", "q1_ns", "p50_ns", "q3_ns", "max_ns",
 	"avg_ns", "p95_ns", "p99_ns",
-	"ops_per_sec", "total_ms", "mem_bytes",
-}
-
-func getMemUsage() uint64 {
-	runtime.GC()
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	return m.Alloc
+	"ops_per_sec", "total_ms",
 }
 
 func fillIndex(idx index.Index, ds Dataset) error {
@@ -113,7 +104,6 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 		}
 
 		totalDuration := time.Since(start)
-		mem := getMemUsage()
 		_ = idx.Close()
 
 		sort.Slice(responetimes, func(i, j int) bool { return responetimes[i] < responetimes[j] })
@@ -132,11 +122,10 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 			P99Ns:     pct(responetimes, 99),
 			OpsPerSec: float64(cfg.PointQueryCount) / totalDuration.Seconds(),
 			TotalMs:   totalDuration.Milliseconds(),
-			MemBytes:  mem,
 		}
 
-		fmt.Printf("[T1] %s: min=%dns q1=%dns p50=%dns q3=%dns max=%dns avg=%dns p95=%dns p99=%dns tput=%.0f ops/s mem=%dMB\n",
-			r.Index, r.MinNs, r.Q1Ns, r.P50Ns, r.Q3Ns, r.MaxNs, r.AvgNs, r.P95Ns, r.P99Ns, r.OpsPerSec, r.MemBytes/1024/1024)
+		fmt.Printf("[T1] %s: min=%dns q1=%dns p50=%dns q3=%dns max=%dns avg=%dns p95=%dns p99=%dns tput=%.0f ops/s\n",
+			r.Index, r.MinNs, r.Q1Ns, r.P50Ns, r.Q3Ns, r.MaxNs, r.AvgNs, r.P95Ns, r.P99Ns, r.OpsPerSec)
 
 		_ = w.Write([]string{
 			r.Index,
@@ -152,7 +141,6 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 			strconv.FormatInt(r.P99Ns, 10),
 			strconv.FormatFloat(r.OpsPerSec, 'f', 2, 64),
 			strconv.FormatInt(r.TotalMs, 10),
-			strconv.FormatUint(r.MemBytes, 10),
 		})
 	}
 
@@ -166,12 +154,11 @@ type T2Result struct {
 	KeysRead  int
 	TotalMs   int64
 	OpsPerSec float64
-	MemBytes  uint64
 }
 
 var t2Header = []string{
 	"index", "range_size", "keys_read",
-	"total_ms", "ops_per_sec", "mem_bytes",
+	"total_ms", "ops_per_sec",
 }
 
 // RunBenchmarkT2 executes the range query benchmark (T2).
@@ -238,7 +225,6 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 			it.Close()
 
 			totalDuration := time.Since(start)
-			mem := getMemUsage()
 
 			r := T2Result{
 				Index:     def.Name,
@@ -246,11 +232,10 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 				KeysRead:  keysRead,
 				TotalMs:   totalDuration.Microseconds(),
 				OpsPerSec: float64(keysRead) / totalDuration.Seconds(),
-				MemBytes:  mem,
 			}
 
-			fmt.Printf("[T2] %s: size=%d keys_read=%d total=%dµs tput=%.0f keys/s mem=%dMB\n",
-				r.Index, r.RangeSize, r.KeysRead, r.TotalMs, r.OpsPerSec, r.MemBytes/1024/1024)
+			fmt.Printf("[T2] %s: size=%d keys_read=%d total=%dµs tput=%.0f keys/s\n",
+				r.Index, r.RangeSize, r.KeysRead, r.TotalMs, r.OpsPerSec)
 
 			_ = w.Write([]string{
 				r.Index,
@@ -258,7 +243,6 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 				strconv.Itoa(r.KeysRead),
 				strconv.FormatInt(r.TotalMs, 10),
 				strconv.FormatFloat(r.OpsPerSec, 'f', 2, 64),
-				strconv.FormatUint(r.MemBytes, 10),
 			})
 		}
 
@@ -274,11 +258,10 @@ type T3Result struct {
 	OpCount       int
 	OpsPerSec     float64
 	CumulativeOps int
-	MemBytes      uint64
 }
 
 var t3Header = []string{
-	"index", "op_count", "ops_per_sec", "cumulative_ops", "mem_bytes",
+	"index", "op_count", "ops_per_sec", "cumulative_ops",
 }
 
 // RunBenchmarkT3 executes the write throughput benchmark (T3).
@@ -325,14 +308,12 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 			if windowOps >= cfg.WriteOpsWindow {
 				duration := time.Since(windowStart).Seconds()
 				opsPerSec := float64(windowOps) / duration
-				mem := getMemUsage()
 
 				_ = w.Write([]string{
 					def.Name,
 					strconv.Itoa(i + 1),
 					fmt.Sprintf("%.2f", opsPerSec),
 					strconv.Itoa(i + 1),
-					strconv.FormatUint(mem, 10),
 				})
 
 				windowStart = time.Now()
@@ -355,7 +336,7 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 
 	w := csv.NewWriter(f)
 	defer w.Flush()
-	_ = w.Write([]string{"index", "op_count", "responetime_ns", "type", "mem_bytes"})
+	_ = w.Write([]string{"index", "op_count", "responetime_ns", "type"})
 
 	for _, def := range indices {
 		fmt.Printf("[%s] %s: Starting %d/%d workload...\n", testLabel, def.Name, readPercent, 100-readPercent)
@@ -381,8 +362,7 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 				responetime := time.Since(start).Nanoseconds()
 
 				if i%cfg.LogInterval == 0 {
-					mem := getMemUsage()
-					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "read", strconv.FormatUint(mem, 10)})
+					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "read"})
 				}
 			} else {
 				// WRITE
@@ -395,8 +375,7 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 				responetime := time.Since(start).Nanoseconds()
 
 				if i%cfg.LogInterval == 0 {
-					mem := getMemUsage()
-					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "write", strconv.FormatUint(mem, 10)})
+					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "write"})
 				}
 			}
 		}
