@@ -14,9 +14,12 @@ import (
 )
 
 var indexColorHex = []string{
-	"#268bd2", // blue  — btree
-	"#859900", // green — bptree
-	"#dc322f", // red   — lsm
+	// B-Tree
+	"#9ecae1", "#4292c6", "#084594",
+	// B+ Tree
+	"#a1d99b", "#41ab5d", "#00441b",
+	// LSM
+	"#fc9272", "#ef3b2c", "#67000d",
 }
 
 const (

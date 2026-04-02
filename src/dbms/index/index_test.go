@@ -176,18 +176,18 @@ func runIndexTests(t *testing.T, newIdx func(path string) (index.Index, error), 
 
 func TestBTree(t *testing.T) {
 	runIndexTests(t, func(path string) (index.Index, error) {
-		return btree.Open(path, 10)
+		return btree.Open(path, 10, 4096)
 	}, "BTree")
 }
 
 func TestBPTree(t *testing.T) {
 	runIndexTests(t, func(path string) (index.Index, error) {
-		return bptree.Open(path, 10)
+		return bptree.Open(path, 10, 4096)
 	}, "BPTree")
 }
 
 func TestLSM(t *testing.T) {
 	runIndexTests(t, func(path string) (index.Index, error) {
-		return lsm.Open(path)
+		return lsm.Open(path, 64)
 	}, "LSM")
 }

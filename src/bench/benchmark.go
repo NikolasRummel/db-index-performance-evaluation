@@ -39,21 +39,57 @@ type IndexDef struct {
 func Indexes(cfg Config) []IndexDef {
 	return []IndexDef{
 		{
-			Name: "btree",
+			Name: "btree_4k",
 			NewFunc: func(path string) (index.Index, error) {
-				return btree.Open(path, cfg.CachePages)
+				return btree.Open(path, cfg.CachePages, 4096)
 			},
 		},
 		{
-			Name: "bptree",
+			Name: "btree_8k",
 			NewFunc: func(path string) (index.Index, error) {
-				return bptree.Open(path, cfg.CachePages)
+				return btree.Open(path, cfg.CachePages, 8192)
 			},
 		},
 		{
-			Name: "lsm_pebble",
+			Name: "btree_16k",
 			NewFunc: func(path string) (index.Index, error) {
-				return lsm.Open(path)
+				return btree.Open(path, cfg.CachePages, 16384)
+			},
+		},
+		{
+			Name: "bptree_4k",
+			NewFunc: func(path string) (index.Index, error) {
+				return bptree.Open(path, cfg.CachePages, 4096)
+			},
+		},
+		{
+			Name: "bptree_8k",
+			NewFunc: func(path string) (index.Index, error) {
+				return bptree.Open(path, cfg.CachePages, 8192)
+			},
+		},
+		{
+			Name: "bptree_16k",
+			NewFunc: func(path string) (index.Index, error) {
+				return bptree.Open(path, cfg.CachePages, 16384)
+			},
+		},
+		{
+			Name: "lsm_pebble_64m",
+			NewFunc: func(path string) (index.Index, error) {
+				return lsm.Open(path, 64)
+			},
+		},
+		{
+			Name: "lsm_pebble_256m",
+			NewFunc: func(path string) (index.Index, error) {
+				return lsm.Open(path, 256)
+			},
+		},
+		{
+			Name: "lsm_pebble_1g",
+			NewFunc: func(path string) (index.Index, error) {
+				return lsm.Open(path, 1024)
 			},
 		},
 	}

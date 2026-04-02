@@ -18,8 +18,14 @@ type LSM struct {
 }
 
 // Open opens (or creates) a Pebble database at the given directory path.
-func Open(dir string) (*LSM, error) {
-	opts := &pebble.Options{}
+func Open(dir string, memSize int64) (*LSM, error) {
+	targetSize := memSize * 1024 * 1024
+
+	opts := &pebble.Options{
+		DisableWAL:   true, // Disable for fairness with B-tree (which has no WAL)
+		MemTableSize: uint64(targetSize),
+	}
+
 	db, err := pebble.Open(dir, opts)
 	if err != nil {
 		return nil, fmt.Errorf("lsm: open: %w", err)
