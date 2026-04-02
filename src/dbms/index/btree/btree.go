@@ -28,7 +28,7 @@ type BTreeAcc struct{}
 
 func (BTreeAcc) CellSize(_ bool, value []byte) int { return cellHeader + len(value) }
 
-func (BTreeAcc) ReadCell(p *pager.Page, i int, _ bool) (int64, []byte, uint32) {
+func (BTreeAcc) ReadCell(p pager.Page, i int, _ bool) (int64, []byte, uint32) {
 	off := int(btpage.CellPtr(p, i))
 	lc := binary.LittleEndian.Uint32(p[off : off+4])
 	key := int64(binary.LittleEndian.Uint64(p[off+4 : off+12]))
@@ -38,14 +38,14 @@ func (BTreeAcc) ReadCell(p *pager.Page, i int, _ bool) (int64, []byte, uint32) {
 	return key, val, lc
 }
 
-func (BTreeAcc) WriteCell(p *pager.Page, off int, key int64, value []byte, leftChild uint32, _ bool) {
+func (BTreeAcc) WriteCell(p pager.Page, off int, key int64, value []byte, leftChild uint32, _ bool) {
 	binary.LittleEndian.PutUint32(p[off:off+4], leftChild)
 	binary.LittleEndian.PutUint64(p[off+4:off+12], uint64(key))
 	binary.LittleEndian.PutUint16(p[off+12:off+14], uint16(len(value)))
 	copy(p[off+14:], value)
 }
 
-func (BTreeAcc) OverwriteValue(p *pager.Page, i int, newVal []byte, _ bool) {
+func (BTreeAcc) OverwriteValue(p pager.Page, i int, newVal []byte, _ bool) {
 	off := int(btpage.CellPtr(p, i)) + 12
 	binary.LittleEndian.PutUint16(p[off:off+2], uint16(len(newVal)))
 	copy(p[off+2:], newVal)
@@ -53,14 +53,14 @@ func (BTreeAcc) OverwriteValue(p *pager.Page, i int, newVal []byte, _ bool) {
 
 func (BTreeAcc) CopyUpLeaves() bool { return false }
 
-func (BTreeAcc) LinkLeaves(_, _ *pager.Page, _, _ uint32) {}
+func (BTreeAcc) LinkLeaves(_, _ pager.Page, _, _ uint32) {}
 
 // BTree implements a B-tree by embedding the generic shared.Tree.
 type BTree struct{ shared.Tree }
 
 // Open opens a B-tree at the given path, creating it if it does not exist.
-func Open(path string, cachePages int) (*BTree, error) {
-	pg, err := pager.Open(path+".bt", cachePages)
+func Open(path string, cachePages int, pageSize uint32) (*BTree, error) {
+	pg, err := pager.Open(path+".bt", cachePages, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func Open(path string, cachePages int) (*BTree, error) {
 		_, _ = pg.Allocate() // page 1: file header
 		rootID, _ := pg.Allocate()
 		t.RootID = uint32(rootID)
-		p := new(pager.Page)
+		p := make(pager.Page, pageSize)
 		btpage.InitPage(p, btpage.TypeLeaf)
 		_ = pg.Write(rootID, p)
 		_ = t.WriteHeader()

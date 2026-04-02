@@ -21,20 +21,20 @@ type NodeAccessor interface {
 
 	// ReadCell decodes the i-th cell from the given page.
 	// It returns the key, value (if present), and the left child page ID (for internal nodes).
-	ReadCell(p *pager.Page, i int, isLeaf bool) (key int64, value []byte, leftChild uint32)
+	ReadCell(p pager.Page, i int, isLeaf bool) (key int64, value []byte, leftChild uint32)
 
 	// WriteCell encodes and writes a cell at the specified offset in the page.
-	WriteCell(p *pager.Page, off int, key int64, value []byte, leftChild uint32, isLeaf bool)
+	WriteCell(p pager.Page, off int, key int64, value []byte, leftChild uint32, isLeaf bool)
 
 	// OverwriteValue updates the value of the i-th cell in-place.
 	// WARNING: This assumes the new value fits in the space allocated for the old value.
-	OverwriteValue(p *pager.Page, i int, newVal []byte, isLeaf bool)
+	OverwriteValue(p pager.Page, i int, newVal []byte, isLeaf bool)
 
 	// CopyUpLeaves returns true if the tree implementation uses copy-up semantics for leaf splits.
 	CopyUpLeaves() bool
 
 	// LinkLeaves performs implementation-specific leaf linkage after a split.
-	LinkLeaves(left, right *pager.Page, newRightID uint32, oldNext uint32)
+	LinkLeaves(left, right pager.Page, newRightID uint32, oldNext uint32)
 }
 
 // Tree represents a generic B-tree structure managed by a Pager.
@@ -46,18 +46,18 @@ type Tree struct {
 
 // ─── helpers ───────────────────────────────────
 
-func isLeaf(p *pager.Page) bool { return p[btpage.OffType] == btpage.TypeLeaf }
+func isLeaf(p pager.Page) bool { return p[btpage.OffType] == btpage.TypeLeaf }
 
-func (t *Tree) readCell(p *pager.Page, i int) (int64, []byte, uint32) {
+func (t *Tree) readCell(p pager.Page, i int) (int64, []byte, uint32) {
 	return t.Acc.ReadCell(p, i, isLeaf(p))
 }
 
-func (t *Tree) cellSize(p *pager.Page, value []byte) int {
+func (t *Tree) cellSize(p pager.Page, value []byte) int {
 	return t.Acc.CellSize(isLeaf(p), value)
 }
 
 // AppendCell adds a new cell to the end of the specified page.
-func (t *Tree) AppendCell(p *pager.Page, key int64, value []byte, leftChild uint32) {
+func (t *Tree) AppendCell(p pager.Page, key int64, value []byte, leftChild uint32) {
 	n := btpage.NumCells(p)
 	off := btpage.AllocCell(p, t.Acc.CellSize(isLeaf(p), value))
 	t.Acc.WriteCell(p, off, key, value, leftChild, isLeaf(p))
@@ -65,7 +65,7 @@ func (t *Tree) AppendCell(p *pager.Page, key int64, value []byte, leftChild uint
 	btpage.SetNumCells(p, n+1)
 }
 
-func DeleteCell(p *pager.Page, i int) {
+func DeleteCell(p pager.Page, i int) {
 	n := btpage.NumCells(p)
 	for j := i; j < n-1; j++ {
 		btpage.SetCellPtr(p, j, btpage.CellPtr(p, j+1))
@@ -73,7 +73,7 @@ func DeleteCell(p *pager.Page, i int) {
 	btpage.SetNumCells(p, n-1)
 }
 
-func ChildAt(p *pager.Page, idx, n int, acc NodeAccessor) uint32 {
+func ChildAt(p pager.Page, idx, n int, acc NodeAccessor) uint32 {
 	if idx == n {
 		return btpage.Rightmost(p)
 	}
@@ -81,7 +81,7 @@ func ChildAt(p *pager.Page, idx, n int, acc NodeAccessor) uint32 {
 	return lc
 }
 
-func FindIdx(p *pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
+func FindIdx(p pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
 	lo, hi := 0, n
 	for lo < hi {
 		m := (lo + hi) / 2
@@ -130,7 +130,7 @@ func (t *Tree) Insert(key int64, value []byte) error {
 		return nil
 	}
 	newRoot, _ := t.Pg.Allocate()
-	p := new(pager.Page)
+	p, _ := t.Pg.Read(newRoot)
 	btpage.InitPage(p, btpage.TypeInternal)
 	btpage.SetRightmost(p, uint32(rightID))
 	t.AppendCell(p, mk, mv, t.RootID)
@@ -187,7 +187,7 @@ type CellData struct {
 	LeftChild uint32
 }
 
-func (t *Tree) doInsert(id uint64, p *pager.Page, n, idx int, key int64, value []byte, rightChild uint64) (int64, []byte, uint64, bool, error) {
+func (t *Tree) doInsert(id uint64, p pager.Page, n, idx int, key int64, value []byte, rightChild uint64) (int64, []byte, uint64, bool, error) {
 	leaf := isLeaf(p)
 
 	if btpage.FreeSpace(p, n) >= t.Acc.CellSize(leaf, value) {
@@ -216,7 +216,7 @@ func (t *Tree) doInsert(id uint64, p *pager.Page, n, idx int, key int64, value [
 	return t.splitNode(id, p, n, idx, key, value, rightChild)
 }
 
-func (t *Tree) splitNode(id uint64, p *pager.Page, n, idx int, key int64, value []byte, rightChild uint64) (int64, []byte, uint64, bool, error) {
+func (t *Tree) splitNode(id uint64, p pager.Page, n, idx int, key int64, value []byte, rightChild uint64) (int64, []byte, uint64, bool, error) {
 	leaf := isLeaf(p)
 	pageType := p[btpage.OffType] // cache before InitPage zeroes it
 
@@ -246,7 +246,7 @@ func (t *Tree) splitNode(id uint64, p *pager.Page, n, idx int, key int64, value 
 	promoted := all[mid]
 
 	newID, _ := t.Pg.Allocate()
-	right := new(pager.Page)
+	right, _ := t.Pg.Read(newID)
 
 	// Reinitialize both pages FIRST
 	btpage.InitPage(p, pageType)
@@ -405,9 +405,9 @@ func (t *Tree) ExportDOT(filename string) error {
 		numCells := btpage.NumCells(p)
 		leaf := isLeaf(p)
 
-		// Calculate Fill Percentage (Total 4096 bytes)
+		// Calculate Fill Percentage
 		free := btpage.FreeSpace(p, numCells)
-		usedPct := 100 - (float64(free) / 4096.0 * 100.0)
+		usedPct := 100 - (float64(free) / float64(t.Pg.PageSize) * 100.0)
 
 		if leaf {
 			nextID := btpage.NextLeaf(p)

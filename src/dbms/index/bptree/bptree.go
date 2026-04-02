@@ -41,7 +41,7 @@ func (BPTreeAcc) CellSize(isLeaf bool, value []byte) int {
 	return internalCellSize
 }
 
-func (BPTreeAcc) ReadCell(p *pager.Page, i int, isLeaf bool) (int64, []byte, uint32) {
+func (BPTreeAcc) ReadCell(p pager.Page, i int, isLeaf bool) (int64, []byte, uint32) {
 	off := int(btpage.CellPtr(p, i))
 	if isLeaf {
 		key := int64(binary.LittleEndian.Uint64(p[off : off+8]))
@@ -55,14 +55,14 @@ func (BPTreeAcc) ReadCell(p *pager.Page, i int, isLeaf bool) (int64, []byte, uin
 	return key, nil, lc
 }
 
-func readCellZeroCopy(p *pager.Page, i int) (int64, []byte) {
+func readCellZeroCopy(p pager.Page, i int) (int64, []byte) {
 	off := int(btpage.CellPtr(p, i))
 	key := int64(binary.LittleEndian.Uint64(p[off : off+8]))
 	vl := int(binary.LittleEndian.Uint16(p[off+8 : off+10]))
 	return key, p[off+10 : off+10+vl] // direct slice into page buffer
 }
 
-func (BPTreeAcc) WriteCell(p *pager.Page, off int, key int64, value []byte, leftChild uint32, isLeaf bool) {
+func (BPTreeAcc) WriteCell(p pager.Page, off int, key int64, value []byte, leftChild uint32, isLeaf bool) {
 	if isLeaf {
 		binary.LittleEndian.PutUint64(p[off:off+8], uint64(key))
 		binary.LittleEndian.PutUint16(p[off+8:off+10], uint16(len(value)))
@@ -73,7 +73,7 @@ func (BPTreeAcc) WriteCell(p *pager.Page, off int, key int64, value []byte, left
 	binary.LittleEndian.PutUint64(p[off+4:off+12], uint64(key))
 }
 
-func (BPTreeAcc) OverwriteValue(p *pager.Page, i int, newVal []byte, isLeaf bool) {
+func (BPTreeAcc) OverwriteValue(p pager.Page, i int, newVal []byte, isLeaf bool) {
 	if !isLeaf {
 		return
 	}
@@ -84,7 +84,7 @@ func (BPTreeAcc) OverwriteValue(p *pager.Page, i int, newVal []byte, isLeaf bool
 
 func (BPTreeAcc) CopyUpLeaves() bool { return true }
 
-func (BPTreeAcc) LinkLeaves(left, right *pager.Page, newRightID uint32, oldNext uint32) {
+func (BPTreeAcc) LinkLeaves(left, right pager.Page, newRightID uint32, oldNext uint32) {
 	btpage.SetNextLeaf(left, newRightID)
 	btpage.SetNextLeaf(right, oldNext)
 }
@@ -95,8 +95,8 @@ func (BPTreeAcc) LinkLeaves(left, right *pager.Page, newRightID uint32, oldNext 
 type BPTree struct{ shared.Tree }
 
 // Open opens a B+ tree at the given path, creating it if it does not exist.
-func Open(path string, cachePages int) (*BPTree, error) {
-	pg, err := pager.Open(path+".bpt", cachePages)
+func Open(path string, cachePages int, pageSize uint32) (*BPTree, error) {
+	pg, err := pager.Open(path+".bpt", cachePages, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func Open(path string, cachePages int) (*BPTree, error) {
 		_, _ = pg.Allocate() // page 1: file header
 		rootID, _ := pg.Allocate()
 		t.RootID = uint32(rootID)
-		p := new(pager.Page)
+		p := make(pager.Page, pageSize)
 		btpage.InitPage(p, btpage.TypeLeaf)
 		_ = pg.Write(rootID, p)
 		_ = t.WriteHeader()
@@ -154,7 +154,7 @@ type RangeIterator struct {
 	end    int64
 	leafID uint64
 	idx    int
-	currPg *pager.Page // Pin the current page
+	currPg pager.Page // Pin the current page
 	k      int64
 	v      []byte
 	err    error

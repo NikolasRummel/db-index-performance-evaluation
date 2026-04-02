@@ -37,75 +37,75 @@ const (
 )
 
 // InitPage initializes a new page with the given type.
-func InitPage(p *pager.Page, pt byte) {
+func InitPage(p pager.Page, pt byte) {
 	for i := range p {
 		p[i] = 0
 	}
 	p[OffType] = pt
 	SetNumCells(p, 0)
-	SetCellContent(p, uint16(pager.PageSize))
+	SetCellContent(p, uint16(len(p)))
 	SetNextLeaf(p, InvalidPage)
 }
 
 // NumCells returns the number of cells stored on the page.
-func NumCells(p *pager.Page) int {
+func NumCells(p pager.Page) int {
 	return int(binary.LittleEndian.Uint16(p[OffNumCells : OffNumCells+2]))
 }
 
 // SetNumCells sets the number of cells stored on the page.
-func SetNumCells(p *pager.Page, n int) {
+func SetNumCells(p pager.Page, n int) {
 	binary.LittleEndian.PutUint16(p[OffNumCells:OffNumCells+2], uint16(n))
 }
 
 // CellContent returns the offset to the beginning of the cell content area.
-func CellContent(p *pager.Page) uint16 {
+func CellContent(p pager.Page) uint16 {
 	return binary.LittleEndian.Uint16(p[OffCellContent : OffCellContent+2])
 }
 
 // SetCellContent sets the offset to the beginning of the cell content area.
-func SetCellContent(p *pager.Page, v uint16) {
+func SetCellContent(p pager.Page, v uint16) {
 	binary.LittleEndian.PutUint16(p[OffCellContent:OffCellContent+2], v)
 }
 
 // Rightmost returns the page ID of the rightmost child.
-func Rightmost(p *pager.Page) uint32 {
+func Rightmost(p pager.Page) uint32 {
 	return binary.LittleEndian.Uint32(p[OffRightmost : OffRightmost+4])
 }
 
 // SetRightmost sets the page ID of the rightmost child.
-func SetRightmost(p *pager.Page, id uint32) {
+func SetRightmost(p pager.Page, id uint32) {
 	binary.LittleEndian.PutUint32(p[OffRightmost:OffRightmost+4], id)
 }
 
 // NextLeaf returns the page ID of the next leaf page.
-func NextLeaf(p *pager.Page) uint32 {
+func NextLeaf(p pager.Page) uint32 {
 	return binary.LittleEndian.Uint32(p[OffNextLeaf : OffNextLeaf+4])
 }
 
 // SetNextLeaf sets the page ID of the next leaf page.
-func SetNextLeaf(p *pager.Page, id uint32) {
+func SetNextLeaf(p pager.Page, id uint32) {
 	binary.LittleEndian.PutUint32(p[OffNextLeaf:OffNextLeaf+4], id)
 }
 
 // CellPtr returns the offset to the i-th cell.
-func CellPtr(p *pager.Page, i int) uint16 {
+func CellPtr(p pager.Page, i int) uint16 {
 	o := OffCellPtrs + i*CellPtrSize
 	return binary.LittleEndian.Uint16(p[o : o+2])
 }
 
 // SetCellPtr sets the offset for the i-th cell.
-func SetCellPtr(p *pager.Page, i int, off uint16) {
+func SetCellPtr(p pager.Page, i int, off uint16) {
 	o := OffCellPtrs + i*CellPtrSize
 	binary.LittleEndian.PutUint16(p[o:o+2], off)
 }
 
 // FreeSpace calculates the remaining free space on the page.
-func FreeSpace(p *pager.Page, n int) int {
+func FreeSpace(p pager.Page, n int) int {
 	return int(CellContent(p)) - (OffCellPtrs + n*CellPtrSize)
 }
 
 // AllocCell allocates space for a cell of the given size and returns its offset.
-func AllocCell(p *pager.Page, size int) int {
+func AllocCell(p pager.Page, size int) int {
 	top := int(CellContent(p)) - size
 	SetCellContent(p, uint16(top))
 	return top

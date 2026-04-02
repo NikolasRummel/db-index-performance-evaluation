@@ -7,32 +7,29 @@ import (
 	"os"
 )
 
-const (
-	// PageSize is the fixed size of a single page in bytes (4 KB).
-	PageSize = 4096
-)
-
-// Page is a raw 4 KB block read from or written to disk.
-type Page [PageSize]byte
+// Page is a raw block read from or written to disk.
+type Page []byte
 
 // Pager manages a file of fixed-size pages, providing caching and allocation.
 type Pager struct {
 	file      *os.File
 	cache     *lruCache
 	pageCount uint64 // total number of pages ever allocated
+	PageSize  uint32 // size of each page in bytes
 }
 
 // Open opens (or creates) a pager backed by the file at the given path.
 // cachePages specifies the number of pages to hold in the internal LRU cache.
-func Open(path string, cachePages int) (*Pager, error) {
+func Open(path string, cachePages int, pageSize uint32) (*Pager, error) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("opening pager file: %w", err)
 	}
 
 	p := &Pager{
-		file:  f,
-		cache: newLRUCache(cachePages),
+		file:     f,
+		cache:    newLRUCache(cachePages),
+		PageSize: pageSize,
 	}
 
 	exists, err := p.fileExists()
@@ -80,15 +77,15 @@ func (p *Pager) Allocate() (uint64, error) {
 	p.pageCount++
 
 	// Write an empty page to extend the file.
-	var blank Page
-	if err := p.writePageToDisk(id, &blank); err != nil {
+	blank := make(Page, p.PageSize)
+	if err := p.writePageToDisk(id, blank); err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
 // Read returns the page with the given ID, from cache or disk.
-func (p *Pager) Read(id uint64) (*Page, error) {
+func (p *Pager) Read(id uint64) (Page, error) {
 	if pg := p.cache.get(id); pg != nil {
 		return pg, nil
 	}
@@ -101,7 +98,7 @@ func (p *Pager) Read(id uint64) (*Page, error) {
 }
 
 // Write writes a page back to disk and updates the cache.
-func (p *Pager) Write(id uint64, pg *Page) error {
+func (p *Pager) Write(id uint64, pg Page) error {
 	p.cache.put(id, pg)
 	return p.writePageToDisk(id, pg)
 }
@@ -120,20 +117,20 @@ func (p *Pager) PageCount() uint64 {
 // --- internal helpers ---
 
 func (p *Pager) offset(id uint64) int64 {
-	return int64(id) * PageSize
+	return int64(id) * int64(p.PageSize)
 }
 
-func (p *Pager) readPageFromDisk(id uint64) (*Page, error) {
-	pg := new(Page)
-	_, err := p.file.ReadAt(pg[:], p.offset(id))
+func (p *Pager) readPageFromDisk(id uint64) (Page, error) {
+	pg := make(Page, p.PageSize)
+	_, err := p.file.ReadAt(pg, p.offset(id))
 	if err != nil {
 		return nil, fmt.Errorf("pager: read page %d: %w", id, err)
 	}
 	return pg, nil
 }
 
-func (p *Pager) writePageToDisk(id uint64, pg *Page) error {
-	_, err := p.file.WriteAt(pg[:], p.offset(id))
+func (p *Pager) writePageToDisk(id uint64, pg Page) error {
+	_, err := p.file.WriteAt(pg, p.offset(id))
 	if err != nil {
 		return fmt.Errorf("pager: write page %d: %w", id, err)
 	}
@@ -141,22 +138,22 @@ func (p *Pager) writePageToDisk(id uint64, pg *Page) error {
 }
 
 func (p *Pager) writePageCount() error {
-	var hdr Page
+	hdr := make(Page, p.PageSize)
 	// Preserve existing header content if the file already has data.
 	if p.pageCount > 1 {
 		existing, err := p.readPageFromDisk(0)
 		if err == nil {
-			hdr = *existing
+			copy(hdr, existing)
 		}
 	}
 	binary.LittleEndian.PutUint64(hdr[:8], p.pageCount)
-	return p.writePageToDisk(0, &hdr)
+	return p.writePageToDisk(0, hdr)
 }
 
 // ─── LRU Cache ────────────────────────────────────────────────────────────────
 type lruEntry struct {
 	id   uint64    // Unique identifier of the page
-	page *Page     // Pointer to the cached page content
+	page Page      // Pointer to the cached page content
 	prev *lruEntry // Pointer to the more recently used entry
 	next *lruEntry // Pointer to the less recently used entry
 }
@@ -175,7 +172,7 @@ func newLRUCache(cap int) *lruCache {
 	}
 }
 
-func (c *lruCache) get(id uint64) *Page {
+func (c *lruCache) get(id uint64) Page {
 	e, ok := c.items[id]
 	if !ok {
 		return nil
@@ -184,7 +181,7 @@ func (c *lruCache) get(id uint64) *Page {
 	return e.page
 }
 
-func (c *lruCache) put(id uint64, pg *Page) {
+func (c *lruCache) put(id uint64, pg Page) {
 	if e, ok := c.items[id]; ok {
 		e.page = pg
 		c.moveToFront(e)
