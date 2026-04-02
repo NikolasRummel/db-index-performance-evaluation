@@ -23,13 +23,14 @@
   // for more options check the package documentation (https://typst.app/universe/package/clean-dhbw)
 )
 
-#include "sections/introduction.typ"
+#include "sections/introduction/introduction.typ"
 #include "sections/fundamentals/dbms/dbms.typ"
 #include "sections/fundamentals/dbms/storage.typ"
 #include "sections/fundamentals/index/index.typ"
 #include "sections/fundamentals/practice/practice.typ"
 #include "sections/benchmark/benchmark.typ"
-#include "sections/test.typ"
+#include "sections/evaluation/evaluation.typ"
+#include "sections/conclusion/conclusion.typ"
 
 
 Im folgenden werden einige nützliche Elemente und Funktionen zum Erstellen von Typst-Dokumenten mit diesem Template erläutert.
