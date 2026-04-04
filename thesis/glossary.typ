@@ -39,14 +39,12 @@
   ),
   (
     key: "IPO",
-    short: "IPO",
-    long: "Input-Process-Output Model. A model that describes the typical structure of a program or system which follows this 3-step process.",
+    description: "Input-Process-Output Model. A model that describes the typical structure of a program or system which follows this 3-step process.",
   ),
 
   (
     key: "CRUD",
-    short: "CRUD",
-    long: "Create, Read, Update, Delete. A common acronym for the four basic operations of persistent storage.",
+    description: "Create, Read, Update, Delete. A common acronym for the four basic operations of persistent storage.",
   )
 
 )
