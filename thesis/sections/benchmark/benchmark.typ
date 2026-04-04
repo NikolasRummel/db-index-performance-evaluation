@@ -238,10 +238,9 @@ Here, the `NodeAccessor` interface defines the common operations which are diffe
 
 Now that we have a structure for the code, the actual design of the trees will be done. 
 
-==== Shared Page Layout
+==== Shared Page Layout and Management
 Both B-Tree and B+-Tree will use the same page structure. The complete design will be inspired by SQLite, which uses the Slotted Page Model we saw at @fig-slotted-page.
-Therefore, the page layout will consist of a header, a cell pointer array and a cell content area. The header will contain metadata about the page, such as the number of cells currently stored on the page and the offset to the top of the cell content area. The cell pointer array will contain absolute offsets to the cells in the cell content area, which will store the actual key-value pairs. The cell content area will grow upwards from the end of the page towards the header, while the cell pointer array will grow downwards from the end of the header towards the cell content area. 
-
+Therefore, the page layout will consist of a header, a cell pointer array and a cell content area. The header will contain metadata about the page, such as the number of cells currently stored on the page and the offset to the top of the cell content area. The cell pointer array will contain absolute offsets to the cells in the cell content area, which will store the actual key-value pairs. The cell content area then grows upwards from the end of the page towards the header, while the cell pointer array will grow downwards from the end of the header towards the cell content area. The space remaining between these two areas represents the available free space.
 
 #figure(
   caption: "Page layout for both B-Tree and B+-Tree",
@@ -262,6 +261,9 @@ Therefore, the page layout will consist of a header, a cell pointer array and a 
     [`[varies]`], [—],             [_(cell content)_],   [Cell bytes allocated by `AllocCell`; each cell starts at the offset stored in its `cellPtrs` entry. Grows upward from `4096` toward the header],
   ),
 )<page-layout>
+
+To manage this layout in the `btpage` package, a `AllocCell(size)` function calculates the new `cellContentStart` by subtracting the record's size from the current offset. The "Free Space" is then dynamically tracked to determine when a page is full:
+$ "FreeSpace" = "cellContentStart" - (13 + "numCells" times 2) $
 
 _Note: In a real implementation, the page layout would need to be designed in more detail, especially because the current header unconditionally reserves four bytes for nextLeaf on every page regardless of tree type, and lacks free block tracking, meaning fragmented space from deleted cells cannot be reclaimed without a full page rewrite._
 
@@ -317,7 +319,58 @@ In the B+-Tree on the other hand there are as we saw at @b-plus-disk-mapping the
 )
 
 === B-Tree and B+-Tree implementation highlights
-In the following pseudocode of the implementation will be shown to give an idea of how the actual implementation looks like and to show some of the differences between the two index structures. The actual implementation can be found in the source code, but here we will focus on the Get() operation and the range query implementation since these are the most interesting operations to compare between the two index structures.
+In the following, the implementation of the core operations will be shown to give an idea of how the actual implementation looks like and to show the differences between the two index structures. 
+The focus will be on the `Get()` operation, the `Insert()` and split logic, and the range query implementation since these are the most interesting operations to compare.
+
+==== Insert() Operation and Split Logic
+The most complex aspect of the B-Tree and B+-Tree implementation is to maintain the balance of the tree during insertion (and deletion if implemented). In addition, this logic was implemented in a way that it can be used for both B-Tree and B+-Tree by using the strategy pattern as described before. 
+
+First, the `Insert(key, value)` operation begins at the root node and recursively descends the tree using `insertRec`. At each internal node, the page is loaded and a binary search within the node to find the according child pointer is performed by the `FindIdx` function.
+
+#figure(
+  caption: [Binary search within a node to find the correct child pointer during insertion.],
+  sourcecode[```go
+func FindIdx(p pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
+	lo, hi := 0, n
+	for lo < hi {
+		m := (lo + hi) / 2
+		k, _, _ := acc.ReadCell(p, m, leaf)
+		if k < key || (!leaf && k == key && acc.CopyUpLeaves()) {
+			lo = m + 1
+		} else {
+			hi = m
+		}
+	}
+	return lo
+}
+```],
+)
+A special case is when we are searching in a B+-Tree since in a internal node, we will find the key which only functions as a separator and does not have an value. In this case, we want to go to the right child subtree to find the actual record in a leaf node. 
+
+Next, the `insertRec` function checks if the key already exists in the current node at the position returned by `FindIdx`. If the key exists and the updated value is not bigger then the existing value, the value is updated in-place, otherwise the existing cell is deleted. 
+
+#figure(
+  caption: [In-place update of an existing key if the new value is smaller or equal in size, otherwise the existing cell is deleted to make space for the new value.],
+  sourcecode[```go
+if k, oldVal, _ := t.Acc.ReadCell(p, idx, leaf); k == key {
+			if len(value) <= len(oldVal) {
+				t.Acc.OverwriteValue(p, idx, value, leaf)
+				return 0, nil, 0, false, t.Pg.Write(id, p)
+			}
+			DeleteCell(p, idx)
+			n--
+		}
+
+```],
+)
+
+As a base case for the `insertRec` function, if we reach a leaf node, the new record is inserted in the leaf, if not we recursively call `insertRec` on the child and insert afterwards.
+#figure(caption: "Insertion and split", image( "../../assets/split.png")) <split>
+
+As seen in @split, we have to handle different cases for the actual insertion. If there is enough space in the current node, we can simply insert a new cell in the current node. 
+However, if there is not enough space in the current node, we need to split the node and differentiate between two cases.
++ The Page is an internal node: The middle key is promoted to the parent node and the current node will be split into two nodes. The left child pointer of the promoted key will point to the left half of the original node, while the right child pointer will point to the new node containing the right half of the original node.
++ The Page is a leaf node: Now this is a bit complex, since again we tried to generalize both B-Tree and B+-Tree. In case of a B-Tree, the middle cell is promoted to the parent node and cut from the original node, while in a B+-Tree, the middle key is promoted to the parent node but not cut from the original node, since in a B+-Tree leaf node, the actual key-value pairs are stored and the internal nodes only store separator keys. In addition, we know also have to link the new leaf node into the linked list of leaf nodes by updating the `nextLeaf` pointer of the new node to point to the next leaf and updating the `nextLeaf` pointer of the original node to point to the new node. 
 
 ==== Get() Operation
 #figure(
@@ -589,4 +642,3 @@ This method is then called for both, T4 and T5, but with a 95/5 read/write ratio
   }
 ```],
 )
-
