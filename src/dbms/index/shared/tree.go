@@ -81,6 +81,8 @@ func ChildAt(p pager.Page, idx, n int, acc NodeAccessor) uint32 {
 	return lc
 }
 
+// FindIdx does a binary search within a database page to locate the index of a key.
+// It uses the NodeAccessor to read keys based on B-Tree type.
 func FindIdx(p pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
 	lo, hi := 0, n
 	for lo < hi {
@@ -178,6 +180,7 @@ func (t *Tree) insertRec(id uint64, key int64, value []byte) (int64, []byte, uin
 	}
 	n = btpage.NumCells(p)
 	idx = FindIdx(p, mk, n, t.Acc, false)
+
 	return t.doInsert(id, p, n, idx, mk, mv, rc)
 }
 
