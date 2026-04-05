@@ -38,6 +38,10 @@
     long: "Solid State Drive",
   ),
   (
+    key: "ACID",
+    description: "Atomicity, Consistency, Isolation, Durability. A set of properties that guarantee reliable processing of database transactions in relational databases.",
+  ),
+  (
     key: "IPO",
     description: "Input-Process-Output Model. A model that describes the typical structure of a program or system which follows this 3-step process.",
   ),

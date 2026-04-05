@@ -18,8 +18,8 @@ To understand index structures and their implementation in a #gls("DBMS"), one m
 ) <dbms_fig>
 
 == Query Processing and Data Definition 
-Users and database administrators interact with the #gls("DBMS") though specific ddl and dml statements. The *DDL Compiler* processes data definition statements, which are used to define the database schema, including tables, indexes, and other database objects. For end users, the *Query Processor* is responsible for data manipulation and retrieval. 
-For relational databases, the most common language for both database administrators and end users is #gls("SQL"). Both the processor and compiler then forward their parsed statements to the *Execution Engine*, which usually optimizes the execution plan and then executes the statements. 
+Users and database administrators interact with the #gls("DBMS") though specific ddl and dml statements. The `DDL Compiler` processes data definition statements, which are used to define the database schema, including tables, indexes, and other database objects. For end users, the `Query Processor` is responsible for data manipulation and retrieval. 
+For relational databases, the most common language for both database administrators and end users is #gls("SQL"). Both the processor and compiler then forward their parsed statements to the `Query optimizer`, which improves the execution plan and forwards it for execution. 
 
-== Component B 
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+== Execution of Queries and Transactions
+After the query was optimized, the `Runtime Database Processor` executes the query by interacting with the `Storage Manager`, which will be discussed in @storage. In addition, it must communicate with the `System Catalog`, which contains metadata about the database, such as the structure of tables, indexes, and other database objects, to verify that requested tables exist. In order to ensure #gls("ACID") properties, concurrency control and recovery management are also crucial components of a #gls("DBMS"). 
