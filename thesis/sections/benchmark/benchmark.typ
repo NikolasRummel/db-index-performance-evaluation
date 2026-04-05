@@ -35,8 +35,6 @@ In addition to the functional requirements, the benchmark should also meet the f
 
 - *Fairness:* The benchmark should ensure that all index structures are tested under the same conditions and workloads to ensure a fair comparison. This includes using the same dataset, the same hardware, and the same configuration for each index structure. Since the LSM-Tree implementation is an external library, in the analysis of the results, the differences in implementation and optimizations will be taken into account to ensure a fair comparison.
 
-- *Code Quality:* The implementation of the benchmark and the index structures should follow good software engineering practices, including modular design, clear documentation, and maintainable code. This will ensure that the code is easy to understand and modify if needed.
-
 
 == Coding language and libraries
 To implement the benchmark and the index structures, a programming language needs to be selected. The selection of the programming language will be based on criteria such as performance or how complex the language is to work with, since the time is limited for this project.
