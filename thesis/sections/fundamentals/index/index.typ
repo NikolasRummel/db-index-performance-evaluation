@@ -372,7 +372,7 @@ An example of this process is shown in the following figure @lsm-rolling-merge2.
 
 
 ==== LSM-Tree Structure in Practice
-The main idea of O'Neil et al. is still the same, but in practice, the common term for the $C_0$ component is `memtable`, while the on-disk components collections of so called `SSTables` @lsm_survey[p. 2]. Also, all LSM-Trees use #gls("Bloom") to optimize read performance, which is suggested in the original paper by O'Neil et al. @lsm_original[p. 381]. To ensure data durability, the memtable is often backed by a write-ahead log, which is written to disk before the memtable is updated. This way, in case of a crash, the system can recover the data from the log and rebuild the memtable @lsm_survey[p. 2].
+The main idea of O'Neil et al. is still the same, but since Google published `Bigtable`, the common term for the $C_0$ component is `memtable`, while the on-disk components collections of so called `SSTables` @lsm_survey[p. 2]@kleppmann[p. 78]. Also, all LSM-Trees use #gls("Bloom") to optimize read performance, which is suggested in the original paper by O'Neil et al. @lsm_original[p. 381]. To ensure data durability, the memtable is often backed by a write-ahead log, which is written to disk before the memtable is updated. This way, in case of a crash, the system can recover the data from the log and rebuild the memtable @lsm_survey[p. 2].
 
 A complete architecture of an LSM-Tree know looks like the following in @lsm_fig.
 
@@ -380,6 +380,8 @@ A complete architecture of an LSM-Tree know looks like the following in @lsm_fig
   image("../../../assets/lsm.png", width: 100%),
   caption: [Complete architecture of an LSM-Tree @lsm_survey[p. 2].], 
 ) <lsm_fig>
+
+TOdo: Leveled compaction
 
 
 ==== Drawbacks of LSM-Trees

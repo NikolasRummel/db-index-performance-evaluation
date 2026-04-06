@@ -3,7 +3,7 @@
 
 == Practical Relevance and Industrial Application <practice>
 
-While choosing an index structure to design a #gls("DBMS"), the choice between B+ Trees and LSM-Trees is primarily dictated by the expected ratio of read-to-write operations and the target storage medium. While B+ Trees remain the foundation for traditional transactional systems, LSM-Trees have emerged as the dominant architecture for distributed, write-heavy, and cloud-native workloads. (S3)
+While choosing an index structure to design a #gls("DBMS"), the choice between B+ Trees and LSM-Trees is primarily dictated by the expected ratio of read-to-write operations and the target storage medium. While B+ Trees remain the foundation for traditional transactional systems, LSM-Trees have emerged as a dominant architecture for NoSQL databases and key-value stores @lsm_survey[p. 1]. 
 
 === B+ Tree-Based Systems 
 Traditional relational #gls("DBMS") like PostgreSQL and MySQL primarily utilize B+ Tree index structures to maintain ACID compliance and optimize for OLTP workloads @mysql_innodb. 
@@ -16,3 +16,22 @@ Traditional relational #gls("DBMS") like PostgreSQL and MySQL primarily utilize 
 Based on SQLite's documentation @sqlite_fileformat, it stores data in a single file and uses two types of B-trees: one for tables and another for indexes. The B-tree for tables is used to store the actual data, while the B-tree for indexes is used to store the index entries.
 The B-tree for tables is organized as a B+-tree, where again the leaf nodes contain the actual data records, while the internal nodes only contain pointers to the leaf nodes. 
 
+=== LSM-Tree-Based Systems
+There are different applications of LSM-Trees, ranging from key-value stores to time-series databases and cloud-native storage systems.
+
+==== Distributed Key-Value Stores
+LSM-Trees are the preferred choice for distributed key-value stores that require high write throughput and horizontal scalability across many nodes.
+
+`Google Bigtable` is a distributed storage system to scale to petabytes of data across many nodes and is used in many google services @bigtable [p. 1]. However, it does not support a full relational model and instead provides a simple data model. Effectively, `Bigtable` uses a LSM-Tree architectute with memtables and SStables described like in @lsm_fig. 
+
+`LevelDB` is an LSM-based key-value store developed by Google and released as open source in 2011 @lsm_storage_survey[p. 413]. It established the basic design of multiple levels (proposed by O'Neil et al. as $C_n$ components) and compaction strategies that are now standard in LSM-Tree implementations. @lsm_storage_survey. `RocksDB` is a fork of `LevelDB` developed by Facebook in 2012, with additional features and optimizations @lsm_storage_survey[p. 413]. 
+
+`Apache Cassandra` is a highly scalable, distributed NoSQL database designed to handle large amounts of data across many node without a single point of failure @lsm_storage_survey[p. 415]. Every single partition in `Cassandra` is stored as a separate LSM-Tree @lsm_storage_survey[p. 415], allowing for high write throughput and fault tolerance at the same time. As we will see in TODO, LSM-Trees are slower for lookups in comparison to B-Trees, which is why `Cassandra` also supports secondary indexes, where the secondaty indexes are updated, if a record is found in the Memtable @lsm_storage_survey[p. 415]. 
+
+==== Time-Series Databases
+Time-series databases 
+`InfluxDB` 
+`Prometheus`
+
+==== Cloud-Native Storage Systems
+`Amazon S3`
