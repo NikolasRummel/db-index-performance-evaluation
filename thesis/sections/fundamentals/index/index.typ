@@ -262,47 +262,9 @@ This is done using a hierachy of components (also called trees):
 
 A *Lookup* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found, a tombstone appears or all components have been searched. This can lead to inefficient read performance, since we might have to search through multiple on-disk components, which is a major drawback of LSM-Trees. To mitigate this problem, LSM-Trees often use Bloom filters, a data structure to quickly check if a key is likely to be present in an on-disk component before performing a more expensive search @kleppmann[p. 79].  
 
-As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. This process is then repeated for the other on-disk components $C_k$ with $k in N$ as well, where we merge the smaller, higher-level component $C_n$ with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$ component @lsm_original[p. 355]:
+As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. This process is then repeated for the other on-disk components $C_k$ with $k in N$ as well, where we merge the smaller, higher-level component $C_n$ with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$ component @lsm_original[p. 355].
 
-#figure(
-  caption: [Generalized Rolling Merge Process: Data from a smaller, higher-level component $C_n$ is merged with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$.],
-  cetz.canvas({
-    import cetz.draw: *
-
-    let upper-fill = blue.lighten(95%)
-    let lower-fill = orange.lighten(95%)
-    let edge-style = (mark: (end: "stealth", fill: black, scale: .5))
-
-    // --- Component: Upper Level (Cn) ---
-    group(name: "cn", {
-      rect((-3, 3), (rel: (3, -1)), fill: upper-fill, name: "box")
-      content("box", text(size: 9pt)[*Upper: $C_n$* \ (Sorted Segment)])
-    })
-
-    // --- Component: Lower Level (Old Cn+1) ---
-    group(name: "old_cn1", {
-      rect((0.5, 3), (rel: (3, -1)), fill: lower-fill, name: "box")
-      content("box", text(size: 9pt)[*Lower: Old $C_(n+1)$* \ (Sorted Segment)])
-    })
-
-    // --- The Rolling Merge Logic ---
-    circle((0, 0.5), radius: 0.7, name: "merge_node")
-    content("merge_node", align(center, text(size: 8pt, weight: "bold")[Merge \ Sort \ Logic]))
-
-    line("cn.box.south", "merge_node.north-west", ..edge-style)
-    line("old_cn1.box.south", "merge_node.north-east", ..edge-style)
-    
-    // --- Result: New Cn+1 ---
-    group(name: "new_cn1", {
-      rect((-3, -1.5), (3, -2.2), fill: green.lighten(95%), name: "box", radius: 0.05)
-      content("box", text(size: 9pt)[*New $C_(n+1)$ Component* (Merged)])
-    })
-
-    line("merge_node.south", "new_cn1.box.north", stroke: 1.5pt + orange.lighten(50%), mark: (end: "stealth", fill: orange))
-  })
-) <lsm-rolling-merge>
-
-An example of this generalized rolling merge process is shown in the following figure. Imagine a bank account database where we have a $C_n$ component with recent updates and deletions, and an old $C_(n+1)$ component with existing entries. During the merge, the updated values from $C_n$ will replace their older counterparts in $C_(n+1)$, while tombstone markers indicating deletions will lead to the removal of those entries in the new $C_(n+1)$ component. This process ensures that the new on-disk component reflects the most up-to-date state of the data while maintaining efficient write performance @kleppmann[p. 79].
+An example of this process is shown in the following figure @lsm-rolling-merge2. Imagine a bank account database where we have a $C_n$ component with recent updates and deletions, and an old $C_(n+1)$ component with existing entries. During the merge, the updated values from $C_n$ will replace their older counterparts in $C_(n+1)$, while tombstone markers indicating deletions will lead to the removal of those entries in the new $C_(n+1)$ component. This process ensures that the new on-disk component reflects the most up-to-date state of the data while maintaining efficient write performance @kleppmann[p. 79].
 
 #figure(
   caption: [Example of rolling merge process. The smaller upper component carries both updated values and tombstone markers (#smallcaps[del]). During the merge new values replace their older counterparts in $C_(n+1)$, while tombstones lead to deletion meaning they are not written to the new $C_(n+1)$. Adapted from @kleppmann[Fig. 3.3, p. 74]],
@@ -409,4 +371,13 @@ An example of this generalized rolling merge process is shown in the following f
 ) <lsm-rolling-merge2>
 
 
+==== LSM-Tree Structure in Practice
+
+#figure(
+  image("../../../assets/lsm.png", width: 100%),
+  caption: [Complete architecture of an LSM-Tree @lsm_survey[p. 2].], 
+) <lsm_fig>
+
+
+==== Drawbacks of LSM-Trees
 While LSM-Tree withthe rolling merge process ensures efficient sequential writes, it comes with some drawbacks. First of all, since its a append-only structure, it leads to increased storage requirements due to the presence of multiple on-disk components and tombstone markers for deletions. Secondly, this leads to a high write amplification since data exists in multiple components and needs to be merged multiple times. Lastly, the merge process takes some ressources and therefore decrese the overall performance of the tree, what we will se in TODO: T3 benchmark data chart
