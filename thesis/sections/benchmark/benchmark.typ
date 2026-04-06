@@ -517,27 +517,6 @@ In addition, it is possible to not just generate random keys, but also sorted on
 === Benchmark runner and tests
 The `Benchmark Runner` will be responsible for executing the tests and collecting the results. Each test will be implemented as a separate function that takes the dataset and the index structures as input and returns the results of the test. The `Benchmark Runner` will then execute each test for each index structure and writes the result in a csv file for plotting and visualization. 
 
-==== Memory usage monitoring
-In addition to measuring the performance of the index structures, the benchmark will also monitor the memory usage of each index structure during the tests. This will be done by using the `runtime` package in Go, which provides functions for monitoring the heap allocation during execution. 
-
-#figure(
-  caption: "Memory usage monitoring using the runtime package",
-  sourcecode[```go
-
-func getMemUsage() uint64 {
-	runtime.GC()
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	return m.Alloc
-}
-```],
-)
-
-The `getMemUsage()` function first triggers a garbage collection to get a more accurate measurement of the memory usage. Then it reads the `MemStats` structure to obtain the current heap allocation information, which will be returned. 
-
-During all tests, theis functon will be called every measure interval to also monitor the heap allocation over time, which will be visualized in the results as a seperate graph.
-
-
 ==== T1: Point Query Performance
 In order to implement the point query test, a random dataset is generated with 10 Million key-value pairs and each index structure is pre-populated with this dataset. 
 Next, 50.000 random keys are selected from the dataset and the response time for retrieving the value associated with each key is measured for each index structure. The results are then used to also calculate all needed metrics like the average, median and interquartile range for the box plot visualization, which are written to a csv file for plotting.
@@ -584,6 +563,7 @@ return nil
 }
 ```],
 )
+TODO: remove memory
 
 ==== T2: Range Query Performance
 Here, the implementation is similar to T1, but instead of measuring the response time for retrieving a single value, the response time for retrieving all key-value pairs within a specified key range is measured. During this test, not only one key range is used, but multiple ranges of always doublig size are used to evaluate how the performance of the index structures changes as the size of the result set increases. As default value, the minimum range is 4096 keys and the maximum is $4096*2^10$. 

@@ -260,7 +260,7 @@ This is done using a hierachy of components (also called trees):
 
 *Deletion* of a key-value pair in a LSM-Tree is also an insertion, but instead of writing the new value, we write a special tombstone value to the $C_0$ component. This tombstone value indicates that the key has been deleted, and when the $C_0$ component is merged with the $C_1$ component, the old value will be removed from the on-disk component.
 
-A *Lookup* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found, a tombstone appears or all components have been searched. This can lead to inefficient read performance, since we might have to search through multiple on-disk components, which is a major drawback of LSM-Trees. To mitigate this problem, LSM-Trees often use Bloom filters, a data structure to quickly check if a key is likely to be present in an on-disk component before performing a more expensive search @kleppmann[p. 79].  
+A *Lookup* in a LSM-Tree now works by starting in the in memory $C_0$ component and if the key is not found there, we continue searching in the on-disk components $C_1, C_2, ...$ starting from the lowest $C_k$ component until the key is found, a tombstone appears or all components have been searched. This can lead to inefficient read performance, since we might have to search through multiple on-disk components, which is a major drawback of LSM-Trees. To mitigate this problem, LSM-Trees often use #gls("Bloom"), a data structure to quickly check if a key is likely to be present in an on-disk component before performing a more expensive search @kleppmann[p. 79].  
 
 As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. This process is then repeated for the other on-disk components $C_k$ with $k in N$ as well, where we merge the smaller, higher-level component $C_n$ with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$ component @lsm_original[p. 355].
 
@@ -372,6 +372,9 @@ An example of this process is shown in the following figure @lsm-rolling-merge2.
 
 
 ==== LSM-Tree Structure in Practice
+The main idea of O'Neil et al. is still the same, but in practice, the common term for the $C_0$ component is `memtable`, while the on-disk components collections of so called `SSTables` @lsm_survey[p. 2]. Also, all LSM-Trees use #gls("Bloom") to optimize read performance, which is suggested in the original paper by O'Neil et al. @lsm_original[p. 381]. To ensure data durability, the memtable is often backed by a write-ahead log, which is written to disk before the memtable is updated. This way, in case of a crash, the system can recover the data from the log and rebuild the memtable @lsm_survey[p. 2].
+
+A complete architecture of an LSM-Tree know looks like the following in @lsm_fig.
 
 #figure(
   image("../../../assets/lsm.png", width: 100%),

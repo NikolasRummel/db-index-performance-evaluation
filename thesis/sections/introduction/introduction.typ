@@ -14,13 +14,13 @@ The choice of the right index structure is crucial for the performance of a data
 == Objectives and Research Questions
 In order to make a decision on which index structure to use, this project aims to explore and compare the performance of different index structures. This will be done by implementing a benchmark that evaluates the performance of B-Trees, B+-Trees and LSM-Trees under different workloads and data sizes. For the implementation, a B-Tree and a B+-Tree will be implemented from scratch, while for the LSM-Tree, an existing implementation will be used in order to save time and focus on the evaluation. As inspiration the rough design of the B-Tree and B+-Tree implementations will be based on SQLite concept of storing all data in one file. 
 
-The goal is to analyze their performance in various aspects like insertion speed, query speed or memory usage. While comparing the structutes, the goal is also to answer the following research questions:
+The goal is to analyze their performance in various aspects like insertion speed or query speed for different workloads. While comparing the structutes, the goal is also to answer the following research questions:
 
 RQ1: How do B-Trees, B+-Trees, and LSM-Trees compare in terms of insertion speed under varying workloads?
 
-RQ2: How significant is the performance gap between B-Trees and B+-Trees during range queries, and how does "Leaf Node Chaining" impact cache locality?
+RQ2: How significant is the performance gap between B-Trees and B+-Trees during range queries?
 
-RQ3: Which index structure should you choose for a OLAP vs OLTP workload, considering factors like read/write ratio and data size?
+RQ3: Which index structure should you choose for a write- or read-heavy workload, considering factors like read/write ratio and data size?
 
 == Structure of the Thesis
 The thesis is structured in 5 main chapters. At first, some overview od #gls("DBMS") will be given, espacially on the storage management. Secondly, in chapter @index, the fundamentals of database index structures will be explained. In chapter @design, the actual implementation of index structures and the benchmark will be described. Chapter @evaluation will present the evaluation results and analyze them in detail and finally, in chapter @conclusion, a summary of the findings will be given and an outlook on potential future work will be presented in chapter @outlook.

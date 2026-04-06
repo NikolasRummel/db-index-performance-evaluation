@@ -49,6 +49,11 @@
   (
     key: "CRUD",
     description: "Create, Read, Update, Delete. A common acronym for the four basic operations of persistent storage.",
-  )
+  ),
+  (
+    key: "Bloom",
+    short: "Bloom Filter",
+    description: "Bloom filters are used to quickly check in $O(1)$ if an element is not present in a set. They are a space-efficient probabilistic data structure to reduce the number of disk accesses needed to find a key in a memtable or SSTable of a LSM-Tree.",
+  ),
 
 )
