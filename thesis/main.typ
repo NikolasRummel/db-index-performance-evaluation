@@ -16,7 +16,7 @@
   date: datetime.today(),
   glossary: glossary-entries, // displays the glossary terms defined in "glossary.typ"
   language: "en", // en, de
-  supervisor: (company: "John Appleseed", university: "Prof. Dr. Roland Schätzle"),
+  supervisor: (university: "Prof. Dr. Roland Schätzle"),
   university: "Duale Hochschule Baden-Württemberg",
   university-location: "Karlsruhe",
   university-short: "DHBW",
