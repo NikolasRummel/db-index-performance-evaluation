@@ -17,10 +17,7 @@ Based on SQLite's documentation @sqlite_fileformat, it stores data in a single f
 The B-tree for tables is organized as a B+-tree, where again the leaf nodes contain the actual data records, while the internal nodes only contain pointers to the leaf nodes. 
 
 === LSM-Tree-Based Systems
-There are different applications of LSM-Trees, ranging from key-value stores to time-series databases and cloud-native storage systems.
-
-==== Distributed Key-Value Stores
-LSM-Trees are the preferred choice for distributed key-value stores that require high write throughput and horizontal scalability across many nodes.
+There are different applications of LSM-Trees, ranging from key-value stores to time-series databases and other systems. 
 
 `Google Bigtable` is a distributed storage system to scale to petabytes of data across many nodes and is used in many google services @bigtable [p. 1]. However, it does not support a full relational model and instead provides a simple data model. Effectively, `Bigtable` uses a LSM-Tree architectute with memtables and SStables described like in @lsm_fig. 
 
@@ -28,10 +25,5 @@ LSM-Trees are the preferred choice for distributed key-value stores that require
 
 `Apache Cassandra` is a highly scalable, distributed NoSQL database designed to handle large amounts of data across many node without a single point of failure @lsm_storage_survey[p. 415]. Every single partition in `Cassandra` is stored as a separate LSM-Tree @lsm_storage_survey[p. 415], allowing for high write throughput and fault tolerance at the same time. As we will see in TODO, LSM-Trees are slower for lookups in comparison to B-Trees, which is why `Cassandra` also supports secondary indexes, where the secondaty indexes are updated, if a record is found in the Memtable @lsm_storage_survey[p. 415]. 
 
-==== Time-Series Databases
-Time-series databases 
-`InfluxDB` 
-`Prometheus`
+Besides more traditional applications, LSM-Trees are also widely used in time-series databases. Those systems capture and store events in time-ordered data, ranging from IoT sensor data to financial transactions @indluxdata[p. 7-10]. `InfluxDB` is the most popular time-series database @dbengines_ranking and uses a storage engine similar to a LSM-Tree @infuxtsm. It also uses a write-ahead log and so called `TSM files` as on-disk components, which are similar to SSTables @infuxtsm. Similar to a traditional `Memtable`, `InfluxDB` uses a in-memory `Cache` which stores all recent writes to the write-ahead log and queries then merge from the `Cache` and the `TSM files` @infuxtsm.
 
-==== Cloud-Native Storage Systems
-`Amazon S3`
