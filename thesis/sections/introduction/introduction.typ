@@ -1,7 +1,6 @@
 #import "@preview/clean-dhbw:0.4.0": gls
 
 = Introduction
-Note: Text not finished. Glossary and abbreviation entries are misssing/ not finished etc.
 
 == Motivation
 Applications are getting more and more data intensive. Social media plattforms have millions of users generating vast amounts of data daily, companys store huge amount of data in database systems to analyze customer behavior or sales trends and with the rise of AI, more and more data is being generated and processed to train machine learning models.
