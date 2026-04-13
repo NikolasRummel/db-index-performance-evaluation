@@ -101,23 +101,19 @@ func PlotT1(outDir string) error {
 	records, _ := csv.NewReader(f).ReadAll()
 
 	var labels []string
-	var boxItems []opts.BoxPlotData
+	var p95Items []opts.BarData
 	var barItems []opts.BarData
 	counters := make(map[string]int)
 
 	for _, rec := range records[1:] {
-		min, _ := strconv.ParseFloat(rec[3], 64)
-		q1, _ := strconv.ParseFloat(rec[4], 64)
-		p50, _ := strconv.ParseFloat(rec[5], 64)
-		q3, _ := strconv.ParseFloat(rec[6], 64)
-		p99, _ := strconv.ParseFloat(rec[10], 64)
+		p95, _ := strconv.ParseFloat(rec[9], 64) // p95 is index 9
 		tput, _ := strconv.ParseFloat(rec[11], 64)
 
 		color := pickColor(rec[0], counters)
 		labels = append(labels, rec[0])
-		boxItems = append(boxItems, opts.BoxPlotData{
-			Value:     []interface{}{min, q1, p50, q3, p99},
-			ItemStyle: &opts.ItemStyle{Color: color, BorderColor: color},
+		p95Items = append(p95Items, opts.BarData{
+			Value:     p95,
+			ItemStyle: &opts.ItemStyle{Color: color},
 		})
 		barItems = append(barItems, opts.BarData{
 			Value:     tput,
@@ -125,13 +121,13 @@ func PlotT1(outDir string) error {
 		})
 	}
 
-	box := charts.NewBoxPlot()
-	box.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{Title: "T1 — Point Query Latency", Subtitle: "min/Q1/median/Q3/p99"}),
-		charts.WithYAxisOpts(opts.YAxis{Name: "ns", Type: "log"}),
+	p95Bar := charts.NewBar()
+	p95Bar.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "T1 — Point Query P95 Response Time"}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "ns", Type: "value"}),
 		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
 	)
-	box.SetXAxis(labels).AddSeries("Latency", boxItems)
+	p95Bar.SetXAxis(labels).AddSeries("P95 Response Time", p95Items)
 
 	bar := charts.NewBar()
 	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{Title: "T1 — Point Query Throughput"}),
@@ -142,7 +138,7 @@ func PlotT1(outDir string) error {
 
 	page := components.NewPage()
 	page.SetLayout(components.PageFlexLayout)
-	page.AddCharts(box, bar)
+	page.AddCharts(p95Bar, bar)
 	return renderPage(page, filepath.Join(outDir, "t1.html"), "[T1]")
 }
 
@@ -211,10 +207,103 @@ func PlotT3(outDir string) error {
 	return genericLinePlot(outDir, "t3_write_throughput.csv", "T3 — Write Throughput", "Ops/sec", "Dataset Growth", "t3.html", false)
 }
 
+func PlotMixed(outDir, file, title, outHtml string) error {
+	// Detailed line plot
+	linePage := components.NewPage()
+	linePage.SetLayout(components.PageFlexLayout)
+
+	lineChart := charts.NewLine()
+	lineChart.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: title}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "Response Time (ns)", Type: "value"}),
+		charts.WithXAxisOpts(opts.XAxis{Name: "Op Count"}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true), Trigger: "axis"}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithDataZoomOpts(opts.DataZoom{Type: "slider", Start: 0, End: 100}),
+	)
+
+	f, _ := os.Open(filepath.Join(outDir, file))
+	defer f.Close()
+	records, _ := csv.NewReader(f).ReadAll()
+	byIndex := make(map[string][]opts.LineData)
+	var indexOrder []string
+	var xLabels []string
+	seen := make(map[string]bool)
+
+	for _, rec := range records[1:] {
+		idxName, xVal := rec[0], rec[1]
+		yVal, _ := strconv.ParseFloat(rec[2], 64)
+		if !seen[idxName] {
+			indexOrder = append(indexOrder, idxName)
+			seen[idxName] = true
+		}
+		byIndex[idxName] = append(byIndex[idxName], opts.LineData{Value: yVal})
+		if idxName == indexOrder[0] {
+			xLabels = append(xLabels, xVal)
+		}
+	}
+	lineChart.SetXAxis(xLabels)
+	counters := make(map[string]int)
+	for _, name := range indexOrder {
+		color := pickColor(name, counters)
+		lineChart.AddSeries(name, byIndex[name],
+			charts.WithLineStyleOpts(opts.LineStyle{Color: color, Width: 2}),
+		)
+	}
+
+	// Summary bar chart
+	sumFile := file[:len(file)-len(".csv")] + "_summary.csv"
+	sf, _ := os.Open(filepath.Join(outDir, sumFile))
+	defer sf.Close()
+	sumRecords, _ := csv.NewReader(sf).ReadAll()
+
+	var sumLabels []string
+	var p50Read, p95Read, p50Write, p95Write []opts.BarData
+	sumSeen := make(map[string]bool)
+
+	for _, rec := range sumRecords[1:] {
+		idxName, opType := rec[0], rec[1]
+		p50, _ := strconv.ParseFloat(rec[4], 64)
+		p95, _ := strconv.ParseFloat(rec[5], 64)
+
+		if !sumSeen[idxName] {
+			sumLabels = append(sumLabels, idxName)
+			sumSeen[idxName] = true
+		}
+
+		if opType == "read" {
+			p50Read = append(p50Read, opts.BarData{Value: p50})
+			p95Read = append(p95Read, opts.BarData{Value: p95})
+		} else {
+			p50Write = append(p50Write, opts.BarData{Value: p50})
+			p95Write = append(p95Write, opts.BarData{Value: p95})
+		}
+	}
+
+	sumBar := charts.NewBar()
+	sumBar.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: title + " — Summary"}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "ns"}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+	)
+	sumBar.SetXAxis(sumLabels).
+		AddSeries("Read P50", p50Read).
+		AddSeries("Read P95", p95Read).
+		AddSeries("Write P50", p50Write).
+		AddSeries("Write P95", p95Write)
+
+	page := components.NewPage()
+	page.SetLayout(components.PageFlexLayout)
+	page.AddCharts(sumBar, lineChart)
+	return renderPage(page, filepath.Join(outDir, outHtml), "["+title[:2]+"]")
+}
+
 func PlotT4(outDir string) error {
-	return genericLinePlot(outDir, "t4_read_heavy.csv", "T4 — Read-Heavy (95/5)", "Latency (ns)", "Op Count", "t4.html", true)
+	return PlotMixed(outDir, "t4_read_heavy.csv", "T4 — Read-Heavy (95/5) Response Time", "t4.html")
 }
 
 func PlotT5(outDir string) error {
-	return genericLinePlot(outDir, "t5_write_heavy.csv", "T5 — Write-Heavy (5/95)", "Latency (ns)", "Op Count", "t5.html", true)
+	return PlotMixed(outDir, "t5_write_heavy.csv", "T5 — Write-Heavy (5/95) Response Time", "t5.html")
 }

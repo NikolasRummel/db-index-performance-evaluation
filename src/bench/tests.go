@@ -68,7 +68,7 @@ func cleanupIndexData(path string) {
 }
 
 // RunBenchmarkT1 executes the point query benchmark (T1).
-// It fills each index with a dataset and measures the responetime and throughput of random point queries.
+// It fills each index with a dataset and measures the response time and throughput of random point queries.
 func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 	ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
 	queryKeys := ds.RandomKeys(cfg.PointQueryCount)
@@ -153,8 +153,8 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 			TotalMs:   totalDuration.Milliseconds(),
 		}
 
-		fmt.Printf("[T1] %s: min=%dns q1=%dns p50=%dns q3=%dns max=%dns avg=%dns p95=%dns p99=%dns tput=%.0f ops/s\n",
-			r.Index, r.MinNs, r.Q1Ns, r.P50Ns, r.Q3Ns, r.MaxNs, r.AvgNs, r.P95Ns, r.P99Ns, r.OpsPerSec)
+		fmt.Printf("[T1] %s: min=%dns p50=%dns avg=%dns p95=%dns p99=%dns tput=%.0f ops/s\n",
+			r.Index, r.MinNs, r.P50Ns, r.AvgNs, r.P95Ns, r.P99Ns, r.OpsPerSec)
 
 		_ = w.Write([]string{
 			r.Index,
@@ -364,17 +364,43 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 	return nil
 }
 
+type MixedSummaryResult struct {
+	Index     string
+	OpType    string
+	Count     int
+	MinNs     int64
+	P50Ns     int64
+	P95Ns     int64
+	P99Ns     int64
+	AvgNs     int64
+	OpsPerSec float64
+}
+
+var mixedSummaryHeader = []string{
+	"index", "op_type", "count", "min_ns", "p50_ns", "p95_ns", "p99_ns", "avg_ns", "ops_per_sec",
+}
+
 // RunMixedWorkload executes a benchmark with a mix of read and write operations.
 func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel string, fileName string) error {
+	// Detailed log file
 	f, err := os.Create(filepath.Join(cfg.OutDir, fileName))
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-
 	w := csv.NewWriter(f)
 	defer w.Flush()
 	_ = w.Write([]string{"index", "op_count", "responetime_ns", "type"})
+
+	// Summary file
+	sumFile, err := os.Create(filepath.Join(cfg.OutDir, fileName[:len(fileName)-len(".csv")]+"_summary.csv"))
+	if err != nil {
+		return err
+	}
+	defer sumFile.Close()
+	sw := csv.NewWriter(sumFile)
+	defer sw.Flush()
+	_ = sw.Write(mixedSummaryHeader)
 
 	for _, def := range indices {
 		fmt.Printf("[%s] %s: Starting %d/%d workload...\n", testLabel, def.Name, readPercent, 100-readPercent)
@@ -396,6 +422,10 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 		}
 		rng := rand.New(rand.NewSource(cfg.Seed + 2))
 
+		readTimes := make([]int64, 0, cfg.MixedOpsTotal)
+		writeTimes := make([]int64, 0, cfg.MixedOpsTotal)
+		startTotal := time.Now()
+
 		for i := 0; i < cfg.MixedOpsTotal; i++ {
 			decision := rng.Intn(100)
 
@@ -405,6 +435,7 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 				start := time.Now()
 				_, _ = idx.Get(key)
 				responetime := time.Since(start).Nanoseconds()
+				readTimes = append(readTimes, responetime)
 
 				if i%cfg.LogInterval == 0 {
 					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "read"})
@@ -418,13 +449,48 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 				start := time.Now()
 				_ = idx.Insert(newKey, val)
 				responetime := time.Since(start).Nanoseconds()
+				writeTimes = append(writeTimes, responetime)
 
 				if i%cfg.LogInterval == 0 {
 					_ = w.Write([]string{def.Name, strconv.Itoa(i), strconv.FormatInt(responetime, 10), "write"})
 				}
 			}
 		}
+		durationTotal := time.Since(startTotal)
 		_ = idx.Close()
+
+		// Calculate and Write Summaries
+		processStats := func(times []int64, opType string) {
+			if len(times) == 0 {
+				return
+			}
+			sort.Slice(times, func(i, j int) bool { return times[i] < times[j] })
+			r := MixedSummaryResult{
+				Index:     def.Name,
+				OpType:    opType,
+				Count:     len(times),
+				MinNs:     times[0],
+				P50Ns:     pct(times, 50),
+				P95Ns:     pct(times, 95),
+				P99Ns:     pct(times, 99),
+				AvgNs:     avg(times),
+				OpsPerSec: float64(len(times)) / durationTotal.Seconds(),
+			}
+
+			fmt.Printf("[%s] %s %-5s: count=%-6d avg=%-8dns p50=%-8dns p95=%-8dns tput=%-8.0f ops/s\n",
+				testLabel, r.Index, r.OpType, r.Count, r.AvgNs, r.P50Ns, r.P95Ns, r.OpsPerSec)
+
+			_ = sw.Write([]string{
+				r.Index, r.OpType, strconv.Itoa(r.Count),
+				strconv.FormatInt(r.MinNs, 10), strconv.FormatInt(r.P50Ns, 10),
+				strconv.FormatInt(r.P95Ns, 10), strconv.FormatInt(r.P99Ns, 10),
+				strconv.FormatInt(r.AvgNs, 10), strconv.FormatFloat(r.OpsPerSec, 'f', 2, 64),
+			})
+		}
+
+		processStats(readTimes, "read")
+		processStats(writeTimes, "write")
+
 		if cfg.CleanupData {
 			cleanupIndexData(idxPath)
 		}
