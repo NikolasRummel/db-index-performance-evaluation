@@ -41,43 +41,66 @@ In summary, this means that for each node in the tree, all keys in the left subt
 
 
 A search tree can then be visualized as follows:
+ 
 #figure(
-  caption: [B-Tree structure of order $p=3$ with extended right-heavy branch],
-  cetz.canvas({
+  caption: [Unbalanced tree structure of order $p=3$.],
+  cetz.canvas(length: 0.8cm, {
     import cetz.draw: *
 
     let node-style = (fill: white, stroke: 1pt)
+    let ptr-style = (fill: rgb("#e1f5fe"), stroke: 0.5pt)
     let edge-style = (mark: (end: "stealth", fill: black, scale: 0.5))
     
-    rect((-0.7, 0.3), (0.7, -0.3), ..node-style, name: "n10")
-    content("n10", [*10 | 20*])
-    
-    rect((-2.4, -1.2), (-1.0, -1.8), ..node-style, name: "n5")
-    content("n5", [*5 | -- *])
-    line((rel: (-0.3, 0), to: "n10.south"), "n5.north", ..edge-style)
-    
-    rect((-0.7, -1.2), (0.7, -1.8), ..node-style, name: "n15")
-    content("n15", [*12 | 15*])
-    line("n10.south", "n15.north", ..edge-style)
-    
-    rect((1.0, -1.2), (2.4, -1.8), ..node-style, name: "n25")
-    content("n25", [*25 | 30*])
-    line((rel: (0.3, 0), to: "n10.south"), "n25.north", ..edge-style)
-    
-    rect((2.0, -2.7), (3.4, -3.3), ..node-style, name: "n35")
-    content("n35", [*35 | 40*])
-    line("n25.south", "n35.north", ..edge-style)
+    let btree-node(name, pos, keys) = {
+      let n = keys.len()
+      let ptr-w = 0.7
+      let key-w = 1.1
+      let h = 0.7
+      let w = (ptr-w * (n + 1)) + (key-w * n)
+      
+      group(name: name, {
+        rect((pos.at(0) - w/2, pos.at(1) + h/2), (pos.at(0) + w/2, pos.at(1) - h/2), ..node-style)
+        
+        for i in range(n) {
+          let x = (pos.at(0) - w/2) + (i * (ptr-w + key-w))
+          rect((x, pos.at(1) + h/2), (x + ptr-w, pos.at(1) - h/2), ..ptr-style, name: "p" + str(i))
+          content("p" + str(i), [$P_#i$], size: 8pt)
+          content((x + ptr-w + key-w/2, pos.at(1)), [*#keys.at(i)*])
+          line((x + ptr-w + key-w, pos.at(1) + h/2), (x + ptr-w + key-w, pos.at(1) - h/2))
+        }
+        
+        let last-x = (pos.at(0) + w/2 - ptr-w)
+        rect((last-x, pos.at(1) + h/2), (last-x + ptr-w, pos.at(1) - h/2), ..ptr-style, name: "p" + str(n))
+        content("p" + str(n), [$P_#n$], size: 8pt)
+      })
+    }
 
-    rect((3.0, -4.2), (4.4, -4.8), ..node-style, name: "n45")
-    content("n45", [*45 | 50*])
-    line("n35.south", "n45.north", ..edge-style)
+    // Root
+    btree-node("n10", (0, 0), ("10", "20"))
+    
+    // Level 1 — tighter horizontal spread
+    btree-node("n5",  (-4.5, -3.0), ("5",))
+    btree-node("n15", (0,    -3.0), ("12", "15"))
+    btree-node("n25", (4.5,  -3.0), ("25", "30"))
+    
+    // Level 2
+    btree-node("n35", (7.0, -6.0), ("35", "40"))
+    
+    // Level 3
+    btree-node("n45", (9.5, -9.0), ("45", "50"))
+
+    // Edges
+    line("n10.p0.south", "n5.north",  ..edge-style)
+    line("n10.p1.south", "n15.north", ..edge-style)
+    line("n10.p2.south", "n25.north", ..edge-style)
+    
+    line("n25.p2.south", "n35.north", ..edge-style)
+    line("n35.p2.south", "n45.north", ..edge-style)
   })
 ) <unbalanced-tree>
 
-In this example, the search tree has a degree of $p=3$, meaning that each node can have at most one key and two child pointers. We see that the keys are organized in such a way that for each node, all keys in the left subtree are less than the key in the node, and all keys in the right subtree are greater.
 
-==== Lookup <search-tree-lookup>
-TODO write when better example tree exists.
+In this example, the search tree has a degree of $p=3$, meaning that each node can have at most one key and two child pointers. We see that the keys are organized in such a way that for each node, all keys in the left subtree are less than the key in the node, and all keys in the right subtree are greater.
 
 ==== Performance Considerations
 
@@ -89,47 +112,73 @@ B-Trees are search trees with some additional constraints to ensure that the tre
 
 In addition, B-Trees were designed because the complete index structure does not fit in memory, so the tree is stored on disk @btree_original[p. 173]. This means that only a part of the tree is in memory at any given time, and the rest is stored on disk. To manage this, each B-Tree node contains a list of keys, pointers to child nodes and record pointers to the actual data records on disk. 
 
-TODO Image
 #figure(
   caption: [Balenced version of the previous tree structure in @unbalanced-tree],
   cetz.canvas({
     import cetz.draw: *
 
     let node-style = (fill: white, stroke: 1pt)
+    let ptr-style = (fill: rgb("#e1f5fe"), stroke: 0.5pt) 
     let edge-style = (mark: (end: "stealth", fill: black, scale: 0.5))
     
-    rect((-0.6, 0.3), (0.6, -0.3), ..node-style, name: "root")
-    content("root", [*25 | -- *])
-    
-    rect((-2.2, -1.2), (-1.0, -1.8), ..node-style, name: "L1")
-    content("L1", [*12 | -- *])
-    line((rel: (-0.2, 0), to: "root.south"), "L1.north", ..edge-style)
-    
-    rect((1.0, -1.2), (2.2, -1.8), ..node-style, name: "R1")
-    content("R1", [*35 | 45*])
-    line((rel: (0.2, 0), to: "root.south"), "R1.north", ..edge-style)
-    
-    rect((-3.4, -2.7), (-2.4, -3.3), ..node-style, name: "leaf1")
-    content("leaf1", [*5 | 10*])
-    
-    rect((-1.8, -2.7), (-0.8, -3.3), ..node-style, name: "leaf2")
-    content("leaf2", [*15 | 20*])
-    
-    line((rel: (-0.3, 0), to: "L1.south"), "leaf1.north", ..edge-style)
-    line((rel: (0.3, 0), to: "L1.south"), "leaf2.north", ..edge-style)
+    let btree-node(name, pos, keys) = {
+      let n = keys.len()
+      let ptr-w = 0.4
+      let key-w = 0.7
+      let rp-w  = 0.5
+      let w = (ptr-w * (n + 1)) + ((key-w + rp-w) * n)
+      let h = 0.9
+      
+      group(name: name, {
+        rect((pos.at(0) - w/2, pos.at(1) + h/2), (pos.at(0) + w/2, pos.at(1) - h/2), ..node-style)
+        
+        for i in range(n) {
+          let x = (pos.at(0) - w/2) + (i * (ptr-w + key-w + rp-w))
+          
+          rect((x, pos.at(1) + h/2), (x + ptr-w, pos.at(1) - h/2), ..ptr-style, name: "p" + str(i))
+          content("p" + str(i), text(size: 8pt)[$P_#i$])
+          
+          content((x + ptr-w + key-w/2, pos.at(1)), text(size: 9pt)[*#keys.at(i)*])
+          
+          line((x + ptr-w + key-w, pos.at(1) + h/2), (x + ptr-w + key-w, pos.at(1) - h/2))
 
-    rect((0.2, -2.7), (1.2, -3.3), ..node-style, name: "leaf3")
-    content("leaf3", [*30 | -- *])
-    
-    rect((1.6, -2.7), (2.6, -3.3), ..node-style, name: "leaf4")
-    content("leaf4", [*40 | -- *])
+          rect((x + ptr-w + key-w, pos.at(1) + h/2), (x + ptr-w + key-w + rp-w, pos.at(1) - h/2),
+               fill: orange.lighten(80%), stroke: 0.5pt)
+          content((x + ptr-w + key-w + rp-w/2, pos.at(1)), text(size: 5.5pt)[$"RP"_#i$])
 
-    rect((3.0, -2.7), (4.0, -3.3), ..node-style, name: "leaf5")
-    content("leaf5", [*50 | -- *])
+          line((x + ptr-w + key-w + rp-w, pos.at(1) + h/2), (x + ptr-w + key-w + rp-w, pos.at(1) - h/2))
+        }
+        
+        let last-p-x = (pos.at(0) + w/2 - ptr-w)
+        rect((last-p-x, pos.at(1) + h/2), (last-p-x + ptr-w, pos.at(1) - h/2), ..ptr-style, name: "p" + str(n))
+        content("p" + str(n), text(size: 8pt)[$P_#n$])
+      })
+    }
+
+    // --- DRAW NODES ---
     
-    line((rel: (-0.4, 0), to: "R1.south"), "leaf3.north", ..edge-style)
-    line("R1.south", "leaf4.north", ..edge-style)
-    line((rel: (0.4, 0), to: "R1.south"), "R1.south", "leaf5.north", ..edge-style)
+    btree-node("root", (0, 0), ("25",))
+    btree-node("L1", (-3.5, -2.5), ("12",))
+    btree-node("R1", (3.5, -2.5), ("35", "45"))
+    
+    let leaf-y = -5.0
+    btree-node("leaf1", (-5.5, leaf-y), ("5", "10"))
+    btree-node("leaf2", (-1.7, leaf-y), ("15", "20"))
+    btree-node("leaf3", (1.9,  leaf-y), ("30",))
+    btree-node("leaf4", (4.05,  leaf-y), ("40",))
+    btree-node("leaf5", (6.2,  leaf-y), ("50",))
+
+    // --- DRAW EDGES ---
+    
+    line("root.p0.south", "L1.north", ..edge-style)
+    line("root.p1.south", "R1.north", ..edge-style)
+    
+    line("L1.p0.south", "leaf1.north", ..edge-style)
+    line("L1.p1.south", "leaf2.north", ..edge-style)
+    
+    line("R1.p0.south", "leaf3.north", ..edge-style)
+    line("R1.p1.south", "leaf4.north", ..edge-style)
+    line("R1.p2.south", "leaf5.north", ..edge-style)
   })
 ) <balanced-tree>
 
@@ -145,7 +194,7 @@ The constraints for a B-Tree of order $p$ are as follows @elmasri2016[p. 619] @d
 6. All leaf nodes tree pointers $P_i$ are NULL and appear in the same level. This ensures that the tree is balanced and we get a guaranteed read performance of $O(h)$ with $h=log_p n$, where $n$ is the number of keys in the tree @intro_algorithms [p. 505]
 
 ==== Lookup 
-A lookup operation in a B-Tree is similar to a normal search tree described in @search-tree-lookup @kleppmann[p. 80]. We start at the root node and compare the search key with the keys in the node. If we find a match, we return the corresponding record pointer to the disc and read from there the according value. If not, we follow the appropriate pointer to the child node based on the key comparison. We repeat this process until we either find the key or reach a NULL pointer in a leaf node, meaning the search key is not present in the tree.
+A lookup operation in a B-Tree is similar to a normal search tree like in @unbalanced-tree @kleppmann[p. 80]. We start at the root node and compare the search key with the keys in the node. If we find a match, we return the corresponding record pointer to the disc and read from there the according value. If not, we follow the appropriate pointer to the child node based on the key comparison. We repeat this process until we either find the key or reach a NULL pointer in a leaf node, meaning the search key is not present in the tree.
 
 ==== Insertion 
 Insertion might seem trivial at first, if there is some space in a node, insert the new key in the correct position to maintain the order. However as described Garcia-Molina et al. @dbsystems_complete [pp. 640-641], if the node is full, we need to split the node into two nodes and promote the middle key to the parent node to maintain the B-Tree properties. This process may propagate up to the root node, potentially increasing the height of the tree @btree_original[p. 178].
@@ -168,70 +217,100 @@ The advantage now is that all leaf nodes are linked together in a linked list, a
 
     let node-style = (fill: white, stroke: 1pt)
     let leaf-fill = blue.lighten(95%)
+    let ptr-fill = rgb("#e1f5fe")
     let disk-fill = orange.lighten(95%)
     let edge-style = (mark: (end: "stealth", fill: black, scale: 0.5))
     let next-pointer-style = (stroke: blue + 0.8pt, mark: (end: "stealth", fill: blue, scale: 0.5))
     let rp-style = (stroke: gray + 0.5pt, mark: (end: "circle", fill: gray, scale: 0.2), dash: "densely-dotted")
-    
+
+    let ptr-w = 0.65  // wider to fit RP_i label
+    let key-w = 0.9
+    let pn-w  = 0.6
+    let h     = 0.6
+    let total-w = 2 * ptr-w + 2 * key-w + pn-w
+
+
     let leaf-page(pos, name, k1, k2) = {
+      let x = pos.at(0)
+      let y = pos.at(1)
       group(name: name, {
-        // Increased width from 2.4 to 3.2
-        rect(pos, (rel: (3.2, -0.6)), fill: leaf-fill, name: "box")
-        
-        // Dividers adjusted for the new width
-        line((rel: (1.2, 0), to: pos), (rel: (1.2, -0.6), to: pos)) 
-        line((rel: (2.4, 0), to: pos), (rel: (2.4, -0.6), to: pos)) 
-        
-        // Content centered in the new wider slots
-        content((rel: (0.6, -0.3), to: pos), text(size: 8pt)[#k1, $"RP"_#k1$])
-        content((rel: (1.8, -0.3), to: pos), text(size: 8pt)[#k2, $"RP"_#k2$])
-        content((rel: (2.8, -0.3), to: pos), text(size: 8pt, fill: blue)[$P_n$])
+        rect((x, y), (x + total-w, y - h), fill: leaf-fill, name: "box")
+        rect((x, y), (x + ptr-w, y - h), fill: orange.lighten(80%), name: "p0")
+        content("p0", text(size: 7pt)[$"RP"_0$])
+        content((x + ptr-w + key-w/2, y - h/2), text(size: 8pt)[#k1])
+        line((x + ptr-w + key-w, y), (x + ptr-w + key-w, y - h))
+        let p1x = x + ptr-w + key-w
+        rect((p1x, y), (p1x + ptr-w, y - h), fill: orange.lighten(80%), name: "p1")
+        content("p1", text(size: 7pt)[$"RP"_1$])
+        content((p1x + ptr-w + key-w/2, y - h/2), text(size: 8pt)[#k2])
+        let pnx = x + total-w - pn-w
+        line((pnx, y), (pnx, y - h))
+        rect((pnx, y), (pnx + pn-w, y - h), fill: ptr-fill, name: "pn")
+        content("pn", text(size: 7pt, fill: blue)[$P_n$])
       })
     }
 
-    // --- Helper function for Disk Block ---
     let disk-block(pos, name, label) = {
-      rect(pos, (rel: (1.2, -0.5)), fill: disk-fill, name: name, radius: 0.1)
+      rect(pos, (rel: (1.6, -0.5)), fill: disk-fill, name: name, radius: 0.1)
       content(name, text(size: 7pt)[#label Data])
     }
 
-    // --- Level 1: Internal Node ---
-    rect((-0.8, 0.5), (0.8, -0.1), ..node-style, name: "L1")
-    content("L1", [*12 | 15*])
-    
-    // --- Level 2: Leaves (Spaced out more to accommodate width) ---
-    leaf-page((-5.5, -1.5), "leaf1", "5", "10")
-    leaf-page((-1.6, -1.5), "leaf2", "12", "14")
-    leaf-page((2.3, -1.5), "leaf3", "15", "20")
+    // --- Root node with pointer slots ---
+    let root-ptr-w = 0.7
+    let root-key-w = 1.1
+    let root-h = 0.7
+    let root-keys = ("12", "15")
+    let rn = root-keys.len()
+    let root-w = (root-ptr-w * (rn + 1)) + (root-key-w * rn)
+    let rx = -root-w / 2
+    let ry = 0.5
 
-    // --- Level 3: The Physical Disk Layer ---
-    line((-6, -2.8), (6, -2.8), stroke: (paint: gray, thickness: 1pt, dash: "dashed"))
-    content((5.2, -2.6), text(size: 8pt, fill: gray)[Physical Disk])
+    group(name: "root", {
+      rect((rx, ry), (rx + root-w, ry - root-h), ..node-style)
+      for i in range(rn) {
+        let x = rx + (i * (root-ptr-w + root-key-w))
+        rect((x, ry), (x + root-ptr-w, ry - root-h), fill: ptr-fill, name: "p" + str(i))
+        content("p" + str(i), text(size: 8pt)[$P_#i$])
+        content((x + root-ptr-w + root-key-w/2, ry - root-h/2), [*#root-keys.at(i)*])
+        line((x + root-ptr-w + root-key-w, ry), (x + root-ptr-w + root-key-w, ry - root-h))
+      }
+      let last-x = rx + root-w - root-ptr-w
+      rect((last-x, ry), (last-x + root-ptr-w, ry - root-h), fill: ptr-fill, name: "p" + str(rn))
+      content("p" + str(rn), text(size: 8pt)[$P_#rn$])
+    })
 
-    disk-block((-5.0, -3.5), "d5", "Key 5")
-    disk-block((-3.6, -3.5), "d10", "Key 10")
-    disk-block((-1.8, -3.5), "d12", "Key 12")
-    disk-block((-0.4, -3.5), "d14", "Key 14")
-    disk-block((2.1, -3.5), "d15", "Key 15")
-    disk-block((3.5, -3.5), "d20", "Key 20")
+    // --- Level 2: Leaves ---
+    leaf-page((-5.9, -1.5), "leaf1", "5", "10")
+    leaf-page((-1.85, -1.5), "leaf2", "12", "14")
+    leaf-page((2.2,  -1.5), "leaf3", "15", "20")
 
-    // --- Connections: Tree to Leaf (Targeting center of wide leaf) ---
-    line("L1.south", (rel: (1.6, 0), to: "leaf1.north"), ..edge-style)
-    line("L1.south", (rel: (1.6, 0), to: "leaf2.north"), ..edge-style)
-    line("L1.south", (rel: (1.6, 0), to: "leaf3.north"), ..edge-style)
+    // --- Physical Disk Layer ---
+    line((-6.5, -2.8), (6.8, -2.8), stroke: (paint: gray, thickness: 1pt, dash: "dashed"))
+    content((5.8, -2.6), text(size: 8pt, fill: gray)[Physical Disk])
+
+    disk-block((-5.6, -3.5), "d5",  "Key 5")
+    disk-block((-3.8, -3.5), "d10", "Key 10")
+    disk-block((-2.0, -3.5), "d12", "Key 12")
+    disk-block((-0.2, -3.5), "d14", "Key 14")
+    disk-block((2.0,  -3.5), "d15", "Key 15")
+    disk-block((3.8,  -3.5), "d20", "Key 20")
+
+    // --- Connections: Root pointer slots to Leaves ---
+    line("root.p0", (rel: (1.75, 0), to: "leaf1.box.north-west"), ..edge-style)
+    line("root.p1", (rel: (1.75, 0), to: "leaf2.box.north-west"), ..edge-style)
+    line("root.p2", (rel: (1.75, 0), to: "leaf3.box.north-west"), ..edge-style)
 
     // --- Connections: Sequential P_next ---
-    line((rel: (2.8, -0.3), to: "leaf1.box.north-west"), (rel: (0, -0.3), to: "leaf2.box.north-west"), ..next-pointer-style)
-    line((rel: (2.8, -0.3), to: "leaf2.box.north-west"), (rel: (0, -0.3), to: "leaf3.box.north-west"), ..next-pointer-style)
-    
+    line("leaf1.pn", (rel: (0, -0.3), to: "leaf2.box.north-west"), ..next-pointer-style)
+    line("leaf2.pn", (rel: (0, -0.3), to: "leaf3.box.north-west"), ..next-pointer-style)
 
     // --- Connections: RP to Disk ---
-    line((rel: (0.6, -0.6), to: "leaf1.box.north-west"), "d5.north", ..rp-style)
-    line((rel: (1.8, -0.6), to: "leaf1.box.north-west"), "d10.north", ..rp-style)
-    line((rel: (0.6, -0.6), to: "leaf2.box.north-west"), "d12.north", ..rp-style)
-    line((rel: (1.8, -0.6), to: "leaf2.box.north-west"), "d14.north", ..rp-style)
-    line((rel: (0.6, -0.6), to: "leaf3.box.north-west"), "d15.north", ..rp-style)
-    line((rel: (1.8, -0.6), to: "leaf3.box.north-west"), "d20.north", ..rp-style)
+    line("leaf1.p0", "d5.north",  ..rp-style)
+    line("leaf1.p1", "d10.north", ..rp-style)
+    line("leaf2.p0", "d12.north", ..rp-style)
+    line("leaf2.p1", "d14.north", ..rp-style)
+    line("leaf3.p0", "d15.north", ..rp-style)
+    line("leaf3.p1", "d20.north", ..rp-style)
   })
 ) <b-plus-disk-mapping>
 
