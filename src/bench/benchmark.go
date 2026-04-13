@@ -27,6 +27,7 @@ type Config struct {
 	ValueSize       int
 	T2StartSize     int
 	T2MaxSize       int
+	CleanupData     bool
 }
 
 // IndexDef defines an index implementation and a factory function to create it.
@@ -75,21 +76,21 @@ func Indexes(cfg Config) []IndexDef {
 			},
 		},
 		{
+			Name: "lsm_pebble_16m",
+			NewFunc: func(path string) (index.Index, error) {
+				return lsm.Open(path, 16)
+			},
+		},
+		{
+			Name: "lsm_pebble_32m",
+			NewFunc: func(path string) (index.Index, error) {
+				return lsm.Open(path, 32)
+			},
+		},
+		{
 			Name: "lsm_pebble_64m",
 			NewFunc: func(path string) (index.Index, error) {
 				return lsm.Open(path, 64)
-			},
-		},
-		{
-			Name: "lsm_pebble_256m",
-			NewFunc: func(path string) (index.Index, error) {
-				return lsm.Open(path, 256)
-			},
-		},
-		{
-			Name: "lsm_pebble_1g",
-			NewFunc: func(path string) (index.Index, error) {
-				return lsm.Open(path, 1024)
 			},
 		},
 	}

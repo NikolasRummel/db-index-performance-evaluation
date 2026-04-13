@@ -37,12 +37,34 @@ var t1Header = []string{
 }
 
 func fillIndex(idx index.Index, ds Dataset) error {
-	for i, k := range ds.Keys {
+	// Create a slice of indices and sort it based on the keys.
+	// This allows us to insert keys in ascending order, which is much faster
+	// for B-tree and B+ tree structures as it minimizes splits and re-balancing.
+	indices := make([]int, len(ds.Keys))
+	for i := range indices {
+		indices[i] = i
+	}
+
+	sort.Slice(indices, func(i, j int) bool {
+		return ds.Keys[indices[i]] < ds.Keys[indices[j]]
+	})
+
+	for _, i := range indices {
+		k := ds.Keys[i]
 		if err := idx.Insert(k, ds.Values[i]); err != nil {
 			return fmt.Errorf("insert key %d: %w", k, err)
 		}
 	}
 	return nil
+}
+
+func cleanupIndexData(path string) {
+	// Try to remove as a directory (LSM)
+	_ = os.RemoveAll(path)
+	// Try to remove as a B-tree file
+	_ = os.Remove(path + ".bt")
+	// Try to remove as a B+ tree file
+	_ = os.Remove(path + ".bpt")
 }
 
 // RunBenchmarkT1 executes the point query benchmark (T1).
@@ -77,6 +99,9 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 		if err := fillIndex(idx, *ds); err != nil {
 			fmt.Printf("[T1] %s: fill failed: %v — skipping\n", def.Name, err)
 			_ = idx.Close()
+			if cfg.CleanupData {
+				cleanupIndexData(idxPath)
+			}
 			continue
 		}
 
@@ -105,6 +130,10 @@ func RunBenchmarkT1(indices []IndexDef, cfg Config) error {
 
 		totalDuration := time.Since(start)
 		_ = idx.Close()
+
+		if cfg.CleanupData {
+			cleanupIndexData(idxPath)
+		}
 
 		sort.Slice(responetimes, func(i, j int) bool { return responetimes[i] < responetimes[j] })
 
@@ -193,6 +222,9 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 		if err := fillIndex(idx, *ds); err != nil {
 			fmt.Printf("[T2] %s: fill failed: %v — skipping\n", def.Name, err)
 			_ = idx.Close()
+			if cfg.CleanupData {
+				cleanupIndexData(idxPath)
+			}
 			continue
 		}
 
@@ -247,6 +279,9 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 		}
 
 		_ = idx.Close()
+		if cfg.CleanupData {
+			cleanupIndexData(idxPath)
+		}
 	}
 
 	fmt.Printf("[T2] results written to %s\n", filepath.Join(cfg.OutDir, "t2_range_query.csv"))
@@ -322,6 +357,9 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 
 		}
 		_ = idx.Close()
+		if cfg.CleanupData {
+			cleanupIndexData(idxPath)
+		}
 	}
 	return nil
 }
@@ -348,7 +386,14 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 		}
 
 		ds := NewDataset(cfg.DatasetSize, cfg.ValueSize, cfg.Seed)
-		_ = fillIndex(idx, *ds)
+		if err := fillIndex(idx, *ds); err != nil {
+			fmt.Printf("[%s] %s: fill failed: %v — skipping\n", testLabel, def.Name, err)
+			_ = idx.Close()
+			if cfg.CleanupData {
+				cleanupIndexData(idxPath)
+			}
+			continue
+		}
 		rng := rand.New(rand.NewSource(cfg.Seed + 2))
 
 		for i := 0; i < cfg.MixedOpsTotal; i++ {
@@ -380,6 +425,9 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 			}
 		}
 		_ = idx.Close()
+		if cfg.CleanupData {
+			cleanupIndexData(idxPath)
+		}
 	}
 	return nil
 }
