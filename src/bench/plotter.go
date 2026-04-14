@@ -125,6 +125,9 @@ func PlotT1(outDir string) error {
 	p95Bar.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{Title: "T1 — Point Query P95 Response Time"}),
 		charts.WithYAxisOpts(opts.YAxis{Name: "ns", Type: "value"}),
+		charts.WithXAxisOpts(opts.XAxis{
+			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true), Interval: "0", Rotate: 30},
+		}),
 		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
 	)
 	p95Bar.SetXAxis(labels).AddSeries("P95 Response Time", p95Items)
@@ -132,6 +135,9 @@ func PlotT1(outDir string) error {
 	bar := charts.NewBar()
 	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{Title: "T1 — Point Query Throughput"}),
 		charts.WithYAxisOpts(opts.YAxis{Name: "Ops/sec"}),
+		charts.WithXAxisOpts(opts.XAxis{
+			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true), Interval: "0", Rotate: 30},
+		}),
 		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
 	)
 	bar.SetXAxis(labels).AddSeries("Throughput", barItems)
@@ -285,6 +291,9 @@ func PlotMixed(outDir, file, title, outHtml string) error {
 	sumBar.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{Title: title + " — Summary"}),
 		charts.WithYAxisOpts(opts.YAxis{Name: "ns"}),
+		charts.WithXAxisOpts(opts.XAxis{
+			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true), Interval: "0", Rotate: 30},
+		}),
 		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true), Top: "8%"}),
 		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
 	)
