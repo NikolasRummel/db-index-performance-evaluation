@@ -103,11 +103,27 @@ func PlotT1(outDir string) error {
 	var labels []string
 	var p95Items []opts.BarData
 	var barItems []opts.BarData
+	var boxItems []opts.BoxPlotData
 	counters := make(map[string]int)
 
 	for _, rec := range records[1:] {
+		minVal, _ := strconv.ParseFloat(rec[3], 64)
+		q1, _ := strconv.ParseFloat(rec[4], 64)
+		p50, _ := strconv.ParseFloat(rec[5], 64)
+		q3, _ := strconv.ParseFloat(rec[6], 64)
+		maxVal, _ := strconv.ParseFloat(rec[7], 64)
 		p95, _ := strconv.ParseFloat(rec[9], 64) // p95 is index 9
 		tput, _ := strconv.ParseFloat(rec[11], 64)
+
+		iqr := q3 - q1
+		wMin := q1 - 1.5*iqr
+		if wMin < minVal {
+			wMin = minVal
+		}
+		wMax := q3 + 1.5*iqr
+		if wMax > maxVal {
+			wMax = maxVal
+		}
 
 		color := pickColor(rec[0], counters)
 		labels = append(labels, rec[0])
@@ -117,6 +133,10 @@ func PlotT1(outDir string) error {
 		})
 		barItems = append(barItems, opts.BarData{
 			Value:     tput,
+			ItemStyle: &opts.ItemStyle{Color: color},
+		})
+		boxItems = append(boxItems, opts.BoxPlotData{
+			Value:     []interface{}{wMin, q1, p50, q3, wMax},
 			ItemStyle: &opts.ItemStyle{Color: color},
 		})
 	}
@@ -142,9 +162,21 @@ func PlotT1(outDir string) error {
 	)
 	bar.SetXAxis(labels).AddSeries("Throughput", barItems)
 
+	box := charts.NewBoxPlot()
+	box.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "T1 — Response Time Distribution"}),
+		charts.WithYAxisOpts(opts.YAxis{Name: "ns", Type: "value"}),
+		charts.WithXAxisOpts(opts.XAxis{
+			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true), Interval: "0", Rotate: 30},
+		}),
+		charts.WithInitializationOpts(opts.Initialization{Width: chartWidth, Height: chartHeight}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
+	)
+	box.SetXAxis(labels).AddSeries("Response Time", boxItems)
+
 	page := components.NewPage()
 	page.SetLayout(components.PageFlexLayout)
-	page.AddCharts(p95Bar, bar)
+	page.AddCharts(box, p95Bar, bar)
 	return renderPage(page, filepath.Join(outDir, "t1.html"), "[T1]")
 }
 
