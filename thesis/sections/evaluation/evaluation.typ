@@ -56,7 +56,7 @@ For T1 5 million records were first inserted sequentially to populate each index
   image(width: 100%, "../../assets/results/t1boxplot.png")
 )<t1boxplot>
 
-=== B-Tree vs. B+-Tree
+=== B-Tree vs. B+-Tree <b-plus-vs-btree>
 The data in @t1boxplot reveals a clear performance gap between the standard B-Tree and the B+-Tree. The B+-Tree (4k) achieves significantly lower latency because it stores all data records in the leaf nodes, while internal nodes contain only keys and pointers. As established in Section @b-plus-disk-mapping, this design increases the fan-out—the number of children per node—thereby reducing the total tree height $h$. The B-Tree 4k has a height of 6 while the B+-Tree (4k) has a height of 4. In contrast, the standard B-Tree (Section @btree) stores values at every level, which consumes space in internal nodes and forces a deeper tree structure, requiring more page fetches for each random lookup.
 
 The data in @t1boxplot shows that B+-Trees are faster then normal B-Trees. Comparing the smallest configurations of both index types, the B+-Tree (4k) with a median time of 2.5 $mu s$ its about two times faster than the B-Tree (4k) with a median time of 4.75 $mu s$. As explained in @b-plus, B+-Trees store more keys per node, which lead to a smaller tree. During this test, the B-Tree 4k has a height of 6 while the B+-Tree (4k) has a height of 4. This means for a point query, the B-Tree (4k) needs to fetch up to 6 pages from disk, while the B+-Tree (4k) only needs to fetch 4 pages, which results in a significant performance improvement. This also applied for larger page sizes, where the B+-Trees are consistently faster than the B-Trees.
@@ -128,6 +128,41 @@ Furthermore, the frequency of these performance drops is inversely proportional 
 
 Looking at the 16MB and 32MB LSM-Tree, we can see that at some point there are drops in performance dropping down to 100.000-200.000 ops/sec. The reason here are so called "write stalls", which occur when the memtable is full and the LSM-Tree needs to flush the memtable to disk, but the flush process is not yet finished and thus the LSM-Tree cannot accept new writes until the flush is finished @pebble_readme. To mitigate this problem, the throughput is being reduced, which is why we see in @t3lsm the drops in performance. The 64MB LSM-Tree does not have these drops in performance, since it has a larger memtable size and thus can buffer more writes before reaching the capacity threshold that triggers a flush to disk.
 
+== Results and analysis of mixed workloads (T4 and T5)
+For T4 and T5, each index is initially filled with 5 million records. Then, a loop with 1 million iterations is executed, where in each iteration, either a random point query or a random insert is performed. 
 
-== Results and analysis of T5 
+=== T4: Read-Heavy Mixed Workload 
+In the read-heavy scenario (95% reads, 5% writes), the primary goal is to maintain high lookup performance while occasionally updating the dataset. 
+
+#figure(
+  caption: [T4: Read-Heavy Workload Summary],
+  image(width: 100%, "../../assets/results/t4.png") 
+)<t4summary>
+
+While the #strong([B+-Trees]) maintains the lowest read response time like we already saw in @b-plus-vs-btree, their write performance is volatile. The median write response time is actually not much higher than the reads, however, the 95th percentile is especially for the #strong([B+-Tree (4k)]) higher. In the worst case, it will be even higher. In contrast, #strong([Pebble]) exhibits much more stable results within each setup. During this test, it did not matter how big the memtable was. As espected, the LSM-Tree has a much higher (2x) read response time compared to the B+-Trees, since for each read, it needs to search within multiple components, which is not as fast like in the B-Trees. 
+
+Since this workload is mostly reads, the B+-Tree is the best choice for this scenario, as it provides the best read performance while still maintaining reasonable write performance.
+
+=== T5: Write-Heavy Mixed Workload 
+Now quite the opposite scenario, a write-heavy workload (5% reads, 95% writes) shifts the focus to applications requiring high ingestion throughput like time-series databases or similar use cases.
+
+#figure(
+  caption: [T5: Write-Heavy Workload Summary],
+  image(width: 100%, "../../assets/results/t5.png") 
+)<t5summary>
+
+A quick look at @t5summary reveals the expected performance of the LSM-Trees. Their write performance is very high, with a median write response time of around 1 $mu s$, which is about 4 times faster than the B-Trees. Also as expected, the read performance of the LSM-Trees is much worse than all B-Trees, with roughly 3 times higher read response times. Within each B-Tree type there is not much difference in performance, but within the LSM-Trees, bigger memtable sizes result in better read performance, since they reduce the frequency of flushes and thus the number of on-disk components that need to be searched for each read. However, the write performance gets worse with bigger memtable sizes, since the flushes are less frequent but more expensive, which results in more severe write stalls we already saw in @t3lsm.
+
+This test clearly shows that for write-heavy workloads, the LSM-Tree is the best choice, as it provides the best write performance. 
+
+
+== Conclusion of the Evaluation
+The benchmarks clearly validate the theoretical properties of the three index structures:
+
++ *B+-Trees* provide the best balance for read-heavy workloads, offering the fastest random lookups and the most efficient range scans. Most applications fall propably into this category, which is why B+-Trees are the most widely used index structure in relational database systems.
++ *Standard B-Trees* are consistently outperformed by B+-Trees due to their greater height and more complex traversal requirements.
++ *LSM-Trees* work very well for write-heavy workloads, achieving significantly higher write throughput than B-Trees. However, their read performance is much worse than B+-Trees, which makes them less suitable for read-heavy workloads. LSM-Trees are a good choice for applications with high ingestion rates and less stringent read latency requirements, such as time-series databases or certain NoSQL systems.
+
+
+
 
