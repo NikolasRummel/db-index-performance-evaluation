@@ -5,10 +5,10 @@
 
 While choosing an index structure to design a #gls("DBMS"), the choice between B+ Trees and LSM-Trees is primarily dictated by the expected ratio of read-to-write operations and the target storage medium. While B+ Trees remain the foundation for traditional transactional systems, LSM-Trees have emerged as a dominant architecture for NoSQL databases and key-value stores @lsm_survey[p. 1]. 
 
-=== B+ Tree-Based Systems 
+=== B+ Tree-Based Systems <bplus_practice>
 Traditional relational #gls("DBMS") like PostgreSQL and MySQL primarily utilize B+ Tree index structures to maintain ACID compliance and optimize for OLTP workloads @mysql_innodb. 
 
-`MySQL` was first released in 1995 and has become a widely used #gls("DBMS") with over 1 billion installations @mysql_release. The default storage engine for MySQL, `InnoDB`, data is organized into B-trees @mysql_physical_structure. Since the data is stored in the leaf nodes, `InnoDB`'s B-tree is technically a B+-Tree. To optimize performance, `InnoDB` uses 16KB pages by default. For sequential inserts, it keeps pages 15/16 full to allow for future growth. For random inserts, the fill factor varies between 50% and 93.75%. If a page's data drops below the 50%  due to deletions, `InnoDB` automatically merges neighboring pages to prevent fragmentation and optimize the on-disk footprint.@mysql_physical_structure
+`MySQL` was first released in 1995 and has become a widely used #gls("DBMS") with over 1 billion installations @mysql_release. The default storage engine for MySQL, `InnoDB`, data is organized into B-trees @mysql_physical_structure. Since the data is stored in the leaf nodes, `InnoDB`'s B-tree is technically a B+-Tree. To optimize performance, `InnoDB` uses 16KB pages by default. For sequential inserts, it keeps pages 15/16 full to allow for future growth. For random inserts, the fill factor varies between 50% and 93.75%. If a page's data drops below the 50%  due to deletions, `InnoDB` automatically merges neighboring pages to prevent fragmentation and optimize the on-disk footprint @mysql_physical_structure.
 
 `PostgreSQL` is a open soruce relational #gls("DBMS") that uses a special B-Tree proposed by Lehman, Philip L. and Yao, s. Bing @postgres_btree_paper, which optimizes the performance of concurrent transactions. Like in Mysql, the B-tree is organized as a B+-tree, where the leaf nodes contain the actual data records, and the internal nodes contain pointers to the leaf nodes. 
 

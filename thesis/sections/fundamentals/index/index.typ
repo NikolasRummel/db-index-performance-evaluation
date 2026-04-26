@@ -205,7 +205,7 @@ Again, deletion is most likely to be more complex than just removing the key fro
 ==== Range Query
 Rangies Querys are a common operation in database systems, where we want to retrieve all keys within a specific range, for instance all titles between 'A' and 'D' @dbsystems_complete[p. 639]. For this example, we would do a lookup for the start key 'A' and then traverse the leaf nodes sequentially until we reach the end key 'D' with depth first in order walk. However, this will traverse all nodes in the range, which can be inefficient if the range is large. B+-Trees address this issue with leaf node chaining @, which will be explained in the next section.
 
-=== B+-Trees
+=== B+-Trees <b-plus>
 B+-Trees are a variant of B-Trees, fixing the problem of inefficient range queries in normal B-Trees. For this reason, B+-Trees are the most commonly used index structure in database systems @elmasri2016[p. 622]. 
 The main difference between B-Trees and B+-Trees is that in B+-Trees, all data pointers are stored in the leafe nodes, resulting that internal nodes only store keys and pointers to child nodes, but no record pointers to the actual data records @elmasri2016[p. 622].
 The advantage now is that all leaf nodes are linked together in a linked list, allowing for efficient range queries by following the pointer to the next leaf node after finding the start key in the leaf node.
@@ -325,7 +325,7 @@ transaction to maintain an index such as this in real time, increasing the total
 === LSM-Trees (Log-Structured Merge Trees)
 Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed for high write throughput @lsm_original[p. 351] and was originally proposed by O'Neil et al. in 1996 @lsm_original. The reason for the design of a new index structure was that the standard disk-based index structures such as the B-tree have some those drawbacks mentioned in @drawbacks-btree, which are especially problematic for write-heavy workloads. LSM-Trees are designed to optimize write performance by batching writes together and writing them sequentially to disk, which minimizes the number of disk I/O operations required for each write and thus significantly improves write performance @lsm_original[p. 351]. 
 
-==== LSM-Tree Structure according to O'Neil et al.
+==== LSM-Tree Structure according to O'Neil et al. <lsm_oneil>
 The fundamental concept of an LSM-Tree is based to batch writes together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
 This is done using a hierachy of components (also called trees):
 

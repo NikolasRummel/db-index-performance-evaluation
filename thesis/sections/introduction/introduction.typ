@@ -10,12 +10,12 @@ Traditionally, database have used B+-Trees as index structures to optimize data 
 
 The choice of the right index structure is crucial for the performance of a database system. Different index structures have different strengths and weaknesses, and the optimal choice depends on the specific workload and use case. Therefore, #gls("DBMS") developers must select the appropriate index for their specific software system, while software engineers need to understand the underlying principles of their chosen #gls("DBMS") to select the right platform and effectively optimize their application design for performance
 
-== Objectives and Research Questions
+== Objectives and Research Questions <research_questions>
 In order to make a decision on which index structure to use, this project aims to explore and compare the performance of different index structures. This will be done by implementing a benchmark that evaluates the performance of B-Trees, B+-Trees and LSM-Trees under different workloads and data sizes. For the implementation, a B-Tree and a B+-Tree will be implemented from scratch, while for the LSM-Tree, an existing implementation will be used in order to save time and focus on the evaluation. As inspiration the rough design of the B-Tree and B+-Tree implementations will be based on SQLite concept of storing all data in one file. 
 
 The goal is to analyze their performance in various aspects like insertion speed or query speed for different workloads. While comparing the structutes, the goal is also to answer the following research questions:
 
-RQ1: How do B-Trees, B+-Trees, and LSM-Trees compare in terms of insertion speed under varying workloads?
+RQ1: How do B-Trees, B+-Trees, and LSM-Trees compare in terms of query speed?
 
 RQ2: How significant is the performance gap between B-Trees and B+-Trees during range queries?
 
