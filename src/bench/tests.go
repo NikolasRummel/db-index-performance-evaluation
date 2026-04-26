@@ -210,8 +210,6 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 	_ = w.Write(t2Header)
 
 	for _, def := range indices {
-		fmt.Printf("[T2] %s: filling index with %d keys...\n", def.Name, cfg.DatasetSize)
-
 		idxPath := filepath.Join(cfg.DataDir, def.Name+"_t2")
 		idx, err := def.NewFunc(idxPath)
 		if err != nil {
@@ -226,6 +224,14 @@ func RunBenchmarkT2(indices []IndexDef, cfg Config) error {
 				cleanupIndexData(idxPath)
 			}
 			continue
+		}
+
+		if h, ok := idx.(interface{ Height() int }); ok {
+			leaves := 0
+			if l, ok := idx.(interface{ CountLeaves() int }); ok {
+				leaves = l.CountLeaves()
+			}
+			fmt.Printf("[T2] %s: tree height = %d, leaves = %d\n", def.Name, h.Height(), leaves)
 		}
 
 		var t2Sizes []int

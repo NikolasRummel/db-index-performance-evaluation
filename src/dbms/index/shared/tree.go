@@ -354,6 +354,29 @@ func (t *Tree) Height() int {
 	}
 }
 
+// CountLeaves returns the number of leaf pages in the tree.
+func (t *Tree) CountLeaves() int {
+	return t.countLeavesRec(uint64(t.RootID))
+}
+
+func (t *Tree) countLeavesRec(id uint64) int {
+	p, err := t.Pg.Read(id)
+	if err != nil {
+		return 0
+	}
+	if isLeaf(p) {
+		return 1
+	}
+	n := btpage.NumCells(p)
+	count := 0
+	for i := 0; i < n; i++ {
+		_, _, lc := t.Acc.ReadCell(p, i, false)
+		count += t.countLeavesRec(uint64(lc))
+	}
+	count += t.countLeavesRec(uint64(btpage.Rightmost(p)))
+	return count
+}
+
 // Print exports the tree structure to a DOT file and generates a PNG visualization.
 func (t *Tree) Print(name string) {
 	dotPath := fmt.Sprintf("results/%s.dot", name)
