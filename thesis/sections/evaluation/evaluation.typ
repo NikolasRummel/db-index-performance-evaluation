@@ -81,8 +81,6 @@ Here, each index is inserted with 5 million records. Then, range queries of diff
 
 In @t2rangeall, we clearly see the performance gap between B-Trees and B+-Trees for range queries. The B+-Trees are significantly faster than the B-Trees, especially if the range sizes becoming larger. The reason here is the linked list of leaf nodes in B+-Trees, which allows to reach the next node faster, in comparison to B-Trees. In @rq we saw that the normal B-Tree must perform a in-order traversal, which results in this performance difference. 
 
-To answer the second research question (RQ2), we see that with the current implementation, which probably can be further optimized, the B+-Tree is about 2 times faster than the B-Tree for range queries. The bigger the range scan is, the bigger the performance gap becomes. This is why for a real #gls("DBMS") B+-Trees are the most commonly used index structure in database systems.
-
 Another interesting point is to look at different configuration of node/page sizes for B-Trees. Here we look at the performance of B-Trees with 4k, 8k and 16k page sizes, the differences within each are the same for B+-Trees.
 
 #figure(
