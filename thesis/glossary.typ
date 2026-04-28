@@ -55,5 +55,9 @@
     short: "Bloom Filter",
     description: "Bloom filters are used to quickly check in $O(1)$ if an element is not present in a set. They are a space-efficient probabilistic data structure to reduce the number of disk accesses needed to find a key in a memtable or SSTable of a LSM-Tree.",
   ),
+  (
+    key: "writeamplification",
+    description: "Write amplification is a phenomenon where the anoubt of data written to the storage media is greater than the amount of data intended to be written. The goal is to minimize write amplification, as it can lead to increased wear on storage devices and unnecessary writes.",
+  )
 
 )

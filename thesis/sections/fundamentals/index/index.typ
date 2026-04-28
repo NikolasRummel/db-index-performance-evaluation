@@ -319,7 +319,7 @@ Now, for a lookup, we follow the same logic like in a normal B-Tree, but will we
 
 ==== Drawbacks of B-Trees <drawbacks-btree>
 However, the B+-Tree (and B-Tree as well) still is not a perfect solution for every possible scenario and they have some drawbacks. First, they are not optimized for write-heavy workloads, since each write operation requires multiple disk I/O operations to maintain the index structure on disk @lsm_original[p. 351]. This will effectively double the I/O cost of the
-transaction to maintain an index such as this in real time, increasing the total system cost up to fifty percent @lsm_original[p. 351]. Secondly, after a page split a B-Tree, some space in those pages is wasted, which leads to fragmentation @kleppmann[p. 84]. In addition, those B-Trees are not crash-safe since they update in place, meaning that in case of a crash while a merge or split is happening, the tree could be left in an inconsistent state @lsm_original[p. 351]. To mitigate this problem, a write-ahead log can be used, which would lead do a lot of write amplification, since we would have to write the log entry and then write the actual data to the disk, which would double the write cost. @kleppmann[p. 82]
+transaction to maintain an index such as this in real time, increasing the total system cost up to fifty percent @lsm_original[p. 351]. Secondly, after a page split a B-Tree, some space in those pages is wasted, which leads to fragmentation @kleppmann[p. 84]. In addition, those B-Trees are not crash-safe since they update in place, meaning that in case of a crash while a merge or split is happening, the tree could be left in an inconsistent state @lsm_original[p. 351]. To mitigate this problem, a write-ahead log can be used, which would lead do a lot of #gls("writeamplification"), since we would have to write the log entry and then write the actual data to the disk, which would double the write cost. @kleppmann[p. 82]
 
 
 === LSM-Trees (Log-Structured Merge Trees)
@@ -451,17 +451,17 @@ An example of this process is shown in the following figure @lsm-rolling-merge2.
 
 
 ==== LSM-Tree Structure in Practice
-The main idea of O'Neil et al. is still the same, but since Google published `Bigtable`, the common term for the $C_0$ component is `memtable`, while the on-disk components collections of so called `SSTables` @lsm_survey[p. 2]@kleppmann[p. 78]. Also, all LSM-Trees use #gls("Bloom") to optimize read performance, which is suggested in the original paper by O'Neil et al. @lsm_original[p. 381]. To ensure data durability, the memtable is often backed by a write-ahead log, which is written to disk before the memtable is updated. This way, in case of a crash, the system can recover the data from the log and rebuild the memtable @lsm_survey[p. 2].
+The main idea of O'Neil et al. is still the same, but since Google published `Bigtable`, the common term for the $C_0$ component is `memtable`, while the on-disk components collections of so called `SSTables` @lsm_survey[p. 2]@kleppmann[p. 78].  `SSTables` are memtables which are written sequentially in a sorted order, making the LSM-Tree fast in flushing @lsm_survey[p. 2]. In addition, next to a `SSTable`, a small index is maintained, that is used to provide lookup for the particular `SSTable` @lsm_survey[p. 2]. Also, all LSM-Trees use #gls("Bloom") to optimize read performance, which is suggested in the original paper by O'Neil et al. @lsm_original[p. 381]. To ensure data durability, the memtable is often backed by a write-ahead log, which is written to disk before the memtable is updated. This way, in case of a crash, the system can recover the data from the log and rebuild the memtable @lsm_survey[p. 2].
 
 A complete architecture of an LSM-Tree know looks like the following in @lsm_fig.
 
 #figure(
-  image("../../../assets/lsm.png", width: 100%),
-  caption: [Complete architecture of an LSM-Tree @lsm_survey[p. 2].], 
+  image("../../../assets/lsm-tree.png", width: 100%),
+  caption: [Complete architecture of an LSM-Tree according to Supriya @lsm_survey[p. 2].], 
 ) <lsm_fig>
 
-TOdo: Leveled compaction
+Here we see that those on-disk components $C_1, C_2, \ldots, C_n$ are organized in levels. Each level has a size limit, and when the size limit is reached, the data is merged into the next level with the compaction process explained in @lsm-rolling-merge2. Usually, the size limit is around 10 times the size of the level before, which means that the higher levels are much larger than the lower levels @cockroachdb_storage_layer.
 
 
 ==== Drawbacks of LSM-Trees
-While LSM-Tree withthe rolling merge process ensures efficient sequential writes, it comes with some drawbacks. First of all, since its a append-only structure, it leads to increased storage requirements due to the presence of multiple on-disk components and tombstone markers for deletions. Secondly, this leads to a high write amplification since data exists in multiple components and needs to be merged multiple times. Lastly, the merge process takes some ressources and therefore decrese the overall performance of the tree, what we will se in TODO: T3 benchmark data chart
+While LSM-Tree withthe rolling merge process ensures efficient sequential writes, it comes with some drawbacks. First of all, since its a append-only structure, it leads to increased storage requirements due to the presence of multiple on-disk components and tombstone markers for deletions. Secondly, this leads to a high #gls("writeamplification") since data exists in multiple components and needs to be merged multiple times. Lastly, the merge process takes some ressources and therefore decrese the overall performance of the tree, which will be seen in TODO T3.
