@@ -1,7 +1,10 @@
 #import "@preview/clean-dhbw:0.4.0": *
-#import "glossary.typ": glossary-entries
+#import "glossary.typ": glossary-entries, acrolist-entries
+
+#register-glossary(acrolist-entries)
 
 #show: clean-dhbw.with(
+  
   title: "Analysis and Comparison of Database Index Structures",
   authors: (
     (name: "Nikolas Rummel", student-id: "7654321", course: "TINF23B6", course-of-studies: "Informatik"),
@@ -21,8 +24,13 @@
   university-location: "Karlsruhe",
   university-short: "DHBW",
   // for more options check the package documentation (https://typst.app/universe/package/clean-dhbw)
-)
+  appendix: [
+  = Acronyms
+ 
+  #print-glossary(acrolist-entries)
+]
 
+)
 #include "sections/introduction/introduction.typ"
 #include "sections/fundamentals/dbms/dbms.typ"
 #include "sections/fundamentals/dbms/storage.typ"
