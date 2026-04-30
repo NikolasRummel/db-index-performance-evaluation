@@ -47,44 +47,44 @@
   ),
   (
     key: "Page",
-    short: "Page",
+    short: "page",
     description: "The fixed-size unit of data transfer between the DBMS and storage, typically 4 KB or 8 KB. It is the atomic unit for buffer management.",
   ),
   (
     key: "Block",
-    short: "Block",
+    short: "block",
     description: "A contiguous sequence of sectors on a storage device, often used as the smallest unit of I/O by the operating system.",
   ),
   (
     key: "Sector",
-    short: "Sector",
+    short: "sector",
     description: "The smallest addressable unit on a physical disk drive, traditionally 512 bytes or 4 KB.",
   ),
   (
     key: "Node",
-    short: "Node",
+    short: "node",
     description: "A fundamental unit of a tree data structure, containing keys and pointers to other nodes.",
   ),
   (
     key: "Leaf Node",
-    short: "Leaf Node",
+    short: "leaf node",
     description: "A node in a tree structure that has no children. In B+-Trees, all data pointers are stored in the leaf nodes.",
   ),
   (
     key: "Internal Node",
-    short: "Internal Node",
+    short: "internal node",
     description: "A node in a tree structure that has child nodes. It is used to guide the search to the appropriate leaf node.",
   ),
   (
-    key: "Index",
-    short: "Index",
-    description: "A data structure that improves the speed of data retrieval operations on a database table at the cost of additional writes and storage space.",
+    key: "Wearleveling",
+    short: "wear leveling",
+    description: "A technique used in SSDs to distribute write and erase cycles evenly across the memory cells to prolong the lifespan of the device.",
   ),
   (
-    key: "Throughput",
-    short: "Throughput",
-    description: "The number of operations or amount of data processed by a system in a given amount of time.",
-  ),
+    key: "gc",
+    short: "garbage collection",
+    description: "In the context of SSDs, garbage collection is the process of reclaiming space by erasing blocks that contain invalid or outdated data. In general, it is a form of automatic memory management that frees up memory that is no longer in use.",
+  )
 )
 
 #let acrolist-entries = (

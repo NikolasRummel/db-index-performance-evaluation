@@ -81,7 +81,7 @@ The candidate languages were scored from 1 (lowest) to 5 (highest) based on the 
 
 ==== Result
 For this project, the Go programming language was choosen for the implementation of the index structures and the benchmark. 
-Inspired by the C programming language, Go is a statically typed, compiled language that however also provides high-level features like garbage collection and built-in support for concurrency @golang[preface p. xii] @godocs. Go was created by Google since they were dealing more and more with complex software systems @golang[preface p. xiiii] and now is widely used in the industry #footnote[https://survey.stackoverflow.co/2025/technology#most-popular-technologies-language]. 
+Inspired by the C programming language, Go is a statically typed, compiled language that however also provides high-level features like #gls("gc") and built-in support for concurrency @golang[preface p. xii] @godocs. Go was created by Google since they were dealing more and more with complex software systems @golang[preface p. xiiii] and now is widely used in the industry #footnote[https://survey.stackoverflow.co/2025/technology#most-popular-technologies-language]. 
 With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languares like C++ and Rust may be more performant but are more complex to work with, which is why Go was choosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some #gls("DBMS") like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
 
 === Libraries
@@ -568,10 +568,10 @@ Here, the implementation is similar to T1, but instead of measuring the response
 
 The detailed implementation can be found in the source code, but the main idea is to use the `Range()` function of the index interface to get an iterator for the specified key range and then use the `Next()` function of the iterator to retrieve all key-value pairs in the range while measuring the response time. In theorie, as we saw in @rq, the B+-Tree should perform much better than the B-Tree for larger result sets since it only needs to traverse the linked list of leaf nodes, while the B-Tree needs to traverse both internal and leaf nodes. 
 
-==== T3: Write #gls("Throughput") Over Time
+==== T3: Write throughput Over Time
 This test should mimic a workload in for instance time series database where new data is continuously inserted into the database. Unlike the static lookups in T1 and T2, T3 focuses on the write path and the overhead associated with structural maintenance—such as B-Tree page splits or LSM-Tree compactions—under continuous load.
 
-The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number if random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a szenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the #gls("Throughput") then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start")) $.
+The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number if random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a szenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the throughput then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start")) $.
 
 #figure(
   caption: [Core logic for windowed write Throughput measurement (T3)],
@@ -585,13 +585,13 @@ The benchmark uses a windowed measurement approach where, instead of calculating
       idx.Insert(key, val)
       windowOps++
 
-      // Calculate #gls("Throughput") once the window size is reached
+      // Calculate throughput once the window size is reached
       if windowOps >= cfg.WriteOpsWindow {
           duration := time.Since(windowStart).Seconds()
           opsPerSec := float64(windowOps) / duration
           memUsage := getMemUsage()
           
-          // Record results (#gls("Throughput") and Memory) for this interval
+          // Record throughput for this interval
           windowStart = time.Now()
           windowOps = 0
       }

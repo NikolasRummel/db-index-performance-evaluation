@@ -49,7 +49,7 @@ For B-Trees, the cache is configured to hold 4096 pages, so 4kb pages result in 
 
 == Results and Analysis of Test 1
 
-For T1 5 million records were first inserted sequentially to populate each index. Subsequently, a workload of 2 million random point queries was executed. This is enough to fill the cache and memtable of each index, mimicking a realistic workload. The results of this test are shown in the following charts, where the first chart shows a boxplot of response times and the second chart shows the #gls("Throughput") in queries per second.
+For T1 5 million records were first inserted sequentially to populate each index. Subsequently, a workload of 2 million random point queries was executed. This is enough to fill the cache and memtable of each index, mimicking a realistic workload. The results of this test are shown in the following charts, where the first chart shows a boxplot of response times and the second chart shows the throughput in queries per second.
 
 #figure(
   caption: [T1: Point Query P95 Response Time],
@@ -106,15 +106,15 @@ Here we see that bigger page sizes result in better performance for range querie
 Since now the configurations with bigger pages, during the range scan, the buffer manager needs to fetch less leaf pages, which results in better performance we see in @t2rangeb. This is one reason why for instance 'InnoDB' uses 16k pages by default, as we saw in @bplus_practice. 
 
 == Results and analysis of T3
-For T3, 5 million records where continuously inserted into each index, while the #gls("Throughput") was measured. The results are shown in the following chart. 
+For T3, 5 million records where continuously inserted into each index, while the throughput was measured. The results are shown in the following chart. 
 #figure(
   caption: [T3: Write Throughput performance of all index types],
   image(width: 100%, "../../assets/results/t3.png")
 )<t3>
 
-As expected, the LSM-Tree outperforms the B-Trees by a factor of roughly 3. In the beginning, all LSM-Trees are even faster, since the memtable is not yet full and thus all writes are done in-memory, which is very fast. As the memtable fills up, the performance of the LSM-Tree decreases, but it still outperforms the B-Trees. The B-Trees have a much lower write #gls("Throughput"), since for each insert, the tree needs to be updated on disk, which requires multiple page fetches and writes for each insert. This is especially problematic for random inserts, which require more page fetches and writes due to the need to maintain the tree structure.
+As expected, the LSM-Tree outperforms the B-Trees by a factor of roughly 3. In the beginning, all LSM-Trees are even faster, since the memtable is not yet full and thus all writes are done in-memory, which is very fast. As the memtable fills up, the performance of the LSM-Tree decreases, but it still outperforms the B-Trees. The B-Trees have a much lower write throughput, since for each insert, the tree needs to be updated on disk, which requires multiple page fetches and writes for each insert. This is especially problematic for random inserts, which require more page fetches and writes due to the need to maintain the tree structure.
 
-In comparison to B-Trees, the #gls("Throughput") of the LSM-Tree is also more unstable, since we write on the memtable until it is full, which results in a sudden drop in performance. After the memtable is full, the LSM-Tree needs to flush the memtable to disk and merge it with the on-disk components, which also results in a drop in performance. This pattern is repeated throughout the test, which results in the unstable performance of the LSM-Tree we see in @t3lsm.
+In comparison to B-Trees, the throughput of the LSM-Tree is also more unstable, since we write on the memtable until it is full, which results in a sudden drop in performance. After the memtable is full, the LSM-Tree needs to flush the memtable to disk and merge it with the on-disk components, which also results in a drop in performance. This pattern is repeated throughout the test, which results in the unstable performance of the LSM-Tree we see in @t3lsm.
 
 #figure(
   caption: [T3: Performance of LSM-Trees during the test],
@@ -124,7 +124,7 @@ In comparison to B-Trees, the #gls("Throughput") of the LSM-Tree is also more un
 
 Furthermore, the frequency of these performance drops is inversely proportional to the MemTable size. As seen in @t3lsm, the 16MB LSM-Tree produces a much higher frequency of flushes compared to the 32MB and 64MB versions. By increasing the MemTable capacity, the tree can buffer more incoming writes before reaching the capacity threshold that triggers a flush to disk. This realationship could be expressed as $f_"flush" approx frac(v_"write", S_"mem")$ where $f_"flush"$ represents the frequency of the performance drops, $v_"write"$ is the ingestion rate, and $S_"mem"$ is the MemTable size.
 TODO back refenrence 
-Looking at the 16MB and 32MB LSM-Tree, we can see that at some point there are drops in performance dropping down to 100.000-200.000 ops/sec. The reason here are so called "write stalls", which occur when the memtable is full and the LSM-Tree needs to flush the memtable to disk, but the flush process is not yet finished and thus the LSM-Tree cannot accept new writes until the flush is finished @pebble_readme. To mitigate this problem, the #gls("Throughput") is being reduced, which is why we see in @t3lsm the drops in performance. The 64MB LSM-Tree does not have these drops in performance, since it has a larger memtable size and thus can buffer more writes before reaching the capacity threshold that triggers a flush to disk.
+Looking at the 16MB and 32MB LSM-Tree, we can see that at some point there are drops in performance dropping down to 100.000-200.000 ops/sec. The reason here are so called "write stalls", which occur when the memtable is full and the LSM-Tree needs to flush the memtable to disk, but the flush process is not yet finished and thus the LSM-Tree cannot accept new writes until the flush is finished @pebble_readme. To mitigate this problem, the throughput is being reduced, which is why we see in @t3lsm the drops in performance. The 64MB LSM-Tree does not have these drops in performance, since it has a larger memtable size and thus can buffer more writes before reaching the capacity threshold that triggers a flush to disk.
 
 == Results and analysis of mixed workloads (T4 and T5)
 For T4 and T5, each index is initially filled with 5 million records. Then, a loop with 1 million iterations is executed, where in each iteration, either a random point query or a random insert is performed. 
@@ -142,7 +142,7 @@ While the #strong([B+-Trees]) maintains the lowest read response time like we al
 Since this workload is mostly reads, the B+-Tree is the best choice for this scenario, as it provides the best read performance while still maintaining reasonable write performance.
 
 === T5: Write-Heavy Mixed Workload 
-Now quite the opposite scenario, a write-heavy workload (5% reads, 95% writes) shifts the focus to applications requiring high ingestion #gls("Throughput") like time-series databases or similar use cases.
+Now quite the opposite scenario, a write-heavy workload (5% reads, 95% writes) shifts the focus to applications requiring high ingestion throughput like time-series databases or similar use cases.
 
 #figure(
   caption: [T5: Write-Heavy Workload Summary],
@@ -159,7 +159,7 @@ The benchmarks clearly validate the theoretical properties of the three index st
 
 + *B+-Trees* provide the best balance for read-heavy workloads, offering the fastest random lookups and the most efficient range scans. Most applications fall propably into this category, which is why B+-Trees are the most widely used index structure in relational database systems.
 + *Standard B-Trees* are consistently outperformed by B+-Trees due to their greater height and more complex traversal requirements.
-+ *LSM-Trees* work very well for write-heavy workloads, achieving significantly higher write #gls("Throughput") than B-Trees. However, their read performance is much worse than B+-Trees, which makes them less suitable for read-heavy workloads. LSM-Trees are a good choice for applications with high ingestion rates and less stringent read latency requirements, such as time-series databases or certain NoSQL systems.
++ *LSM-Trees* work very well for write-heavy workloads, achieving significantly higher write throughput than B-Trees. However, their read performance is much worse than B+-Trees, which makes them less suitable for read-heavy workloads. LSM-Trees are a good choice for applications with high ingestion rates and less stringent read latency requirements, such as time-series databases or certain NoSQL systems.
 
 
 
