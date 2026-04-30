@@ -10,9 +10,9 @@ In order to design the benchmark, we can use typical software engineering practi
 
 === Functional Requirements <fr>
 For the benchmark, the following index structures will be implemented and compared:
-- *#gls("B-Tree"):* A normal #gls("B-Tree") where data is stored in both internal and leaf nodes should be implemented like described in @btree
-- *#gls("B+-Tree"):* A #gls("B+-Tree") where data is only stored in linked leaf nodes based in order to compare the range query performance. Moreove because #gls("B+-Tree", plural: true) are the most common index structure used in #gls("DBMS").
-- *#gls("LSM-Tree"):* Since there is not enough time to implement a full #gls("LSM-Tree") from scratch, an existing implementation will be used. For this, some evaluation will be done on existing Go libraries and then the best fitting one will be choosen to be used. 
+- *B-Tree:* A normal B-Tree where data is stored in both internal and leaf nodes should be implemented like described in @btree
+- *B+-Tree:* A B+-Tree where data is only stored in linked leaf nodes based in order to compare the range query performance. Moreove because B+-Trees are the most common index structure used in #gls("DBMS").
+- *LSM-Tree:* Since there is not enough time to implement a full LSM-Tree from scratch, an existing implementation will be used. For this, some evaluation will be done on existing Go libraries and then the best fitting one will be choosen to be used. 
 
 In order to compare the performance of these index structures and answering the research questions, the benchmark will consist of multiple tests (T1-T5) that will evaluate different aspects of the index structures under different workloads. The following will be designed to measure the following performance metrics:
 
@@ -31,7 +31,7 @@ In addition to the functional requirements, the benchmark should also meet the f
 
 - *Reproducibility:* The benchmark should store its generated values and  reports in a way that allows for reproducibility of the results. This means that after re-running the benchmark with the same parameters, the same results should be obtained. If generated data is not deleted, this will be used in order to ensure reproducibility.
 
-- *Fairness:* The benchmark should ensure that all index structures are tested under the same conditions and workloads to ensure a fair comparison. This includes using the same dataset, the same hardware, and the same configuration for each index structure. Since the #gls("LSM-Tree") implementation is an external library, in the analysis of the results, the differences in implementation and optimizations will be taken into account to ensure a fair comparison.
+- *Fairness:* The benchmark should ensure that all index structures are tested under the same conditions and workloads to ensure a fair comparison. This includes using the same dataset, the same hardware, and the same configuration for each index structure. Since the LSM-Tree implementation is an external library, in the analysis of the results, the differences in implementation and optimizations will be taken into account to ensure a fair comparison.
 
 
 == Coding language and libraries
@@ -85,7 +85,7 @@ Inspired by the C programming language, Go is a statically typed, compiled langu
 With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languares like C++ and Rust may be more performant but are more complex to work with, which is why Go was choosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some #gls("DBMS") like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
 
 === Libraries
-In order to implement the benchmark and the index structures, some libraries will be used to facilitate the implementation. As mentioned before, for the #gls("LSM-Tree") implementation, an existing library will be used. In addition, some libraries will be used for plotting and visualization of the results. 
+In order to implement the benchmark and the index structures, some libraries will be used to facilitate the implementation. As mentioned before, for the LSM-Tree implementation, an existing library will be used. In addition, some libraries will be used for plotting and visualization of the results. 
 
 
 == Architectural Overview
@@ -98,9 +98,9 @@ The benchmark will consist of mainly two components. The `benchmark` package wil
 The `benchmark` package will be responsible for implementing all tests and their execution. The `Benchmark Runner` will be responsible for executing the tests and collecting the results, while the `Dataset Generator` will be responsible for generating the dataset that will be used for the tests. The `Result Plotter` will be responsible for creating the visualizations of the results in form of graphs and charts.
 
 === Package `dbms`
-The `dbms` package will be responsible for implementing the index structures and the buffer manager. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The #gls("B-Tree"), #gls("B+-Tree") and #gls("LSM-Tree") components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
+The `dbms` package will be responsible for implementing the index structures and the buffer manager. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The B-Tree, B+-Tree and LSM-Tree components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
 
-Since only the #gls("B-Tree") and #gls("B+-Tree") will be implemented from scratch, the #gls("LSM-Tree") component will be a wrapper and not use our buffer manager.
+Since only the B-Tree and B+-Tree will be implemented from scratch, the LSM-Tree component will be a wrapper and not use our buffer manager.
 
 
 === Entry Point (main.go)
@@ -224,9 +224,9 @@ In order to compare the performance of the three indexes, a common interface wil
 Here, we use a simplified key value record where the key is an int64 and the value an actual bytle slice/array. Usually, the key would be a complex data type to not only support integer keys but also strings or other. Hovewer, for the sake of simplicity of this work, we will stick to this simplified soliution.
 
 === Generic Tree Implementation
-Since both the #gls("B-Tree") and the #gls("B+-Tree") have a lot of similarities in their implementation, a generic tree structure will be implemented that can be used for both index structures. This will allow for code reuse and a easier implementation of the two index structures where as storage specific details like the structure of the nodes will be implemented in the according #gls("B-Tree") implemenations.
+Since both the B-Tree and the B+-Tree have a lot of similarities in their implementation, a generic tree structure will be implemented that can be used for both index structures. This will allow for code reuse and a easier implementation of the two index structures where as storage specific details like the structure of the nodes will be implemented in the according B-Tree implemenations.
 
-To implement this generically, the strategy pattern @strategy will be used where each #gls("B-Tree") implements its specific logic (strategy) for operations like the range query. In a normal #gls("B-Tree"), the range query would need to traverse both internal and leaf nodes, while in a #gls("B+-Tree"), the range query would only need to traverse the linked leaf nodes. By using the strategy pattern, we can implement the common logic for both index structures in the generic tree implementation and then implement the specific logic for each index structure in their respective implementations.
+To implement this generically, the strategy pattern @strategy will be used where each B-Tree implements its specific logic (strategy) for operations like the range query. In a normal B-Tree, the range query would need to traverse both internal and leaf nodes, while in a B+-Tree, the range query would only need to traverse the linked leaf nodes. By using the strategy pattern, we can implement the common logic for both index structures in the generic tree implementation and then implement the specific logic for each index structure in their respective implementations.
 
 #figure(caption: "Strategy pattern for tree implementations", image(width: 70%, "../../assets/tree_strategy.svg"))
 
@@ -235,7 +235,7 @@ Here, the `NodeAccessor` interface defines the common operations which are diffe
 Now that we have a structure for the code, the actual design of the trees will be done. 
 
 ==== Shared Page Layout and Management
-Both #gls("B-Tree") and #gls("B+-Tree") will use the same page structure. The complete design will be inspired by `SQLite`, which uses the Slotted Page Model we saw at @fig-slotted-page.
+Both B-Tree and B+-Tree will use the same page structure. The complete design will be inspired by `SQLite`, which uses the Slotted Page Model we saw at @fig-slotted-page.
 Therefore, the page layout will consist of a header, a cell pointer array and a cell content area. The header will contain metadata about the page, such as the number of cells currently stored on the page and the offset to the top of the cell content area. The cell pointer array will contain absolute offsets to the cells in the cell content area, which will store the actual key-value pairs. The cell content area then grows upwards from the end of the page towards the header, while the cell pointer array will grow downwards from the end of the header towards the cell content area. The space remaining between these two areas represents the available free space.
 
 #figure(
@@ -264,7 +264,7 @@ $ "FreeSpace" = "cellContentStart" - (13 + "numCells" times 2) $
 _Note: In a real implementation, the page layout would need to be designed in more detail, especially because the current header unconditionally reserves four bytes for nextLeaf on every page regardless of tree type, and lacks free block tracking, meaning fragmented space from deleted cells cannot be reclaimed without a full page rewrite._
 
 ==== B-tree Cell Format
-Now, the individual cell layout can be designed. Since in a #gls("B-Tree") there is no difference between internal and leaf nodes, the same cell format will be used. Here, we need to store the child pointer for the left child subtree and then the actual key-value pair. Since the value can be of any length, we also need to store the length of the value in order to know how many bytes to read for the value.
+Now, the individual cell layout can be designed. Since in a B-Tree there is no difference between internal and leaf nodes, the same cell format will be used. Here, we need to store the child pointer for the left child subtree and then the actual key-value pair. Since the value can be of any length, we also need to store the length of the value in order to know how many bytes to read for the value.
 
 #figure(
   caption: [Cell layout for B-Tree nodes],
@@ -283,7 +283,7 @@ Now, the individual cell layout can be designed. Since in a #gls("B-Tree") there
 )
 
 ==== B+ tree Cell Formats
-In the #gls("B+-Tree") on the other hand there are as we saw at @b-plus-disk-mapping the internal and leaf nodes store different things. In internal nodes, there is only the key and the left child pointer which need to be stored, while in the leaf nodes the actual key-value pairs need to be stored. As a result there are two different cell formats for B+Trees:
+In the B+-Tree on the other hand there are as we saw at @b-plus-disk-mapping the internal and leaf nodes store different things. In internal nodes, there is only the key and the left child pointer which need to be stored, while in the leaf nodes the actual key-value pairs need to be stored. As a result there are two different cell formats for B+Trees:
 
 #figure(
   caption: [Cell layout for internal B+-Tree nodes],
@@ -314,12 +314,12 @@ In the #gls("B+-Tree") on the other hand there are as we saw at @b-plus-disk-map
   )
 )
 
-=== #gls("B-Tree") and #gls("B+-Tree") implementation highlights
+=== B-Tree and B+-Tree implementation highlights
 In the following, the implementation of the core operations will be shown to give an idea of how the actual implementation looks like and to show the differences between the two index structures. 
 The focus will be on the `Get()` operation, the `Insert()` and split logic, and the range query implementation since these are the most interesting operations to compare.
 
 ==== Insert() Operation and Split Logic
-The most complex aspect of the #gls("B-Tree") and #gls("B+-Tree") implementation is to maintain the balance of the tree during insertion (and deletion if implemented). In addition, this logic was implemented in a way that it can be used for both #gls("B-Tree") and #gls("B+-Tree") by using the strategy pattern as described before. 
+The most complex aspect of the B-Tree and B+-Tree implementation is to maintain the balance of the tree during insertion (and deletion if implemented). In addition, this logic was implemented in a way that it can be used for both B-Tree and B+-Tree by using the strategy pattern as described before. 
 
 First, the `Insert(key, value)` operation begins at the root node and recursively descends the tree using `insertRec`. At each internal node, the page is loaded and a binary search within the node to find the according child pointer is performed by the `FindIdx` function.
 
@@ -341,7 +341,7 @@ func FindIdx(p pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
 }
 ```],
 )
-A special case is when we are searching in a #gls("B+-Tree") since in a internal node, we will find the key which only functions as a separator and does not have an value. In this case, we want to go to the right child subtree to find the actual record in a leaf node. 
+A special case is when we are searching in a B+-Tree since in a internal node, we will find the key which only functions as a separator and does not have an value. In this case, we want to go to the right child subtree to find the actual record in a leaf node. 
 
 Next, the `insertRec` function checks if the key already exists in the current node at the position returned by `FindIdx`. If the key exists and the updated value is not bigger then the existing value, the value is updated in-place, otherwise the existing cell is deleted. 
 
@@ -366,7 +366,7 @@ As a base case for the `insertRec` function, if we reach a leaf node, the new re
 As seen in @split, we have to handle different cases for the actual insertion. If there is enough space in the current node, we can simply insert a new cell in the current node. 
 However, if there is not enough space in the current node, we need to split the node and differentiate between two cases.
 + The Page is an internal node: The middle key is promoted to the parent node and the current node will be split into two nodes. The left child pointer of the promoted key will point to the left half of the original node, while the right child pointer will point to the new node containing the right half of the original node.
-+ The Page is a leaf node: Now this is a bit complex, since again we tried to generalize both #gls("B-Tree") and #gls("B+-Tree"). In case of a #gls("B-Tree"), the middle cell is promoted to the parent node and cut from the original node, while in a #gls("B+-Tree"), the middle key is promoted to the parent node but not cut from the original node, since in a #gls("B+-Tree") leaf node, the actual key-value pairs are stored and the internal nodes only store separator keys. In addition, we know also have to link the new leaf node into the linked list of leaf nodes by updating the `nextLeaf` pointer of the new node to point to the next leaf and updating the `nextLeaf` pointer of the original node to point to the new node. 
++ The Page is a leaf node: Now this is a bit complex, since again we tried to generalize both B-Tree and B+-Tree. In case of a B-Tree, the middle cell is promoted to the parent node and cut from the original node, while in a B+-Tree, the middle key is promoted to the parent node but not cut from the original node, since in a B+-Tree leaf node, the actual key-value pairs are stored and the internal nodes only store separator keys. In addition, we know also have to link the new leaf node into the linked list of leaf nodes by updating the `nextLeaf` pointer of the new node to point to the next leaf and updating the `nextLeaf` pointer of the original node to point to the new node. 
 
 ==== Get() Operation
 #figure(
@@ -408,9 +408,9 @@ return NIL
   )
 )
 
-Here, the #gls("B-Tree") checks every node for the key since internal nodes also store values. We start at the root node and search for the key. If we can find it in the current node (curr), we can return the value. If not we go to the subtree with via the childPointer. If we reach the leaf and still did not found the key, we return NIL since the key does not exist in the tree. 
+Here, the B-Tree checks every node for the key since internal nodes also store values. We start at the root node and search for the key. If we can find it in the current node (curr), we can return the value. If not we go to the subtree with via the childPointer. If we reach the leaf and still did not found the key, we return NIL since the key does not exist in the tree. 
 
-The #gls("B+-Tree") on the other hand first needs to find the leaf node where the key would be stored and then search for the key in the leaf node by following the child pointers until we reach a leaf node. Once we are at the leaf node, we search for the key and return the value if we find it, otherwise we return NIL.
+The B+-Tree on the other hand first needs to find the leaf node where the key would be stored and then search for the key in the leaf node by following the child pointers until we reach a leaf node. Once we are at the leaf node, we search for the key and return the value if we find it, otherwise we return NIL.
 ==== Range Query <rq>
 
 #figure(
@@ -440,30 +440,30 @@ loop:
   )
 )
 
-The Next() function for the #gls("B-Tree") is more complex since we need to traverse both internal and leaf nodes. We are doing a in-order traversal of the tree where we first visit the left child, then emit the current node and then visit the right child. We use a stack to keep track of the nodes we need to visit and an index to keep track of which child we are currently visiting.
+The Next() function for the B-Tree is more complex since we need to traverse both internal and leaf nodes. We are doing a in-order traversal of the tree where we first visit the left child, then emit the current node and then visit the right child. We use a stack to keep track of the nodes we need to visit and an index to keep track of which child we are currently visiting.
 
-In the #gls("B+-Tree") contrary, the Next() function is much simpler since we only need to follow the linked list of leaf nodes. 
+In the B+-Tree contrary, the Next() function is much simpler since we only need to follow the linked list of leaf nodes. 
 
-In the benchmark we will see how much faster this approach is for range queries compared to the #gls("B-Tree"), especially as the size of the result set increases. TODO: forward ref 
+In the benchmark we will see how much faster this approach is for range queries compared to the B-Tree, especially as the size of the result set increases. TODO: forward ref 
 
-=== #gls("LSM-Tree") Implementation
-To implement the existing #gls("LSM-Tree") implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
+=== LSM-Tree Implementation
+To implement the existing LSM-Tree implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
 
-To create a #gls("LSM-Tree") with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface:
+To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface:
 
 #figure(
   caption: "Ein Stück Quellcode",
   sourcecode[```go
-    type #gls("LSM") struct {
+    type LSM struct {
       db *pebble.DB
     }
-    func Open(dir string) (*#gls("LSM"), error) {
+    func Open(dir string) (*LSM, error) {
       opts := &pebble.Options{}
       db, err := pebble.Open(dir, opts)
       if err != nil {
         return nil, fmt.Errorf("lsm: open: %w", err)
       }
-      return &#gls("LSM"){db: db}, nil
+      return &LSM{db: db}, nil
     }
 ```],
 )
@@ -473,7 +473,7 @@ Now to implement all CRUD operations, we can use the corresponding Pebble functi
 #figure(
   caption: "Ein Stück Quellcode",
   sourcecode[```go
-func (l *#gls("LSM")) Insert(key int64, value []byte) error {
+func (l *LSM) Insert(key int64, value []byte) error {
 	return l.db.Set(encodeKey(key), value, pebble.NoSync)
 }
 ```],
@@ -566,10 +566,10 @@ TODO: remove memory
 ==== T2: Range Query Performance
 Here, the implementation is similar to T1, but instead of measuring the response time for retrieving a single value, the response time for retrieving all key-value pairs within a specified key range is measured. During this test, not only one key range is used, but multiple ranges of always doublig size are used to evaluate how the performance of the index structures changes as the size of the result set increases. As default value, the minimum range is 4096 keys and the maximum is $4096*2^10$. 
 
-The detailed implementation can be found in the source code, but the main idea is to use the `Range()` function of the index interface to get an iterator for the specified key range and then use the `Next()` function of the iterator to retrieve all key-value pairs in the range while measuring the response time. In theorie, as we saw in @rq, the #gls("B+-Tree") should perform much better than the #gls("B-Tree") for larger result sets since it only needs to traverse the linked list of leaf nodes, while the #gls("B-Tree") needs to traverse both internal and leaf nodes. 
+The detailed implementation can be found in the source code, but the main idea is to use the `Range()` function of the index interface to get an iterator for the specified key range and then use the `Next()` function of the iterator to retrieve all key-value pairs in the range while measuring the response time. In theorie, as we saw in @rq, the B+-Tree should perform much better than the B-Tree for larger result sets since it only needs to traverse the linked list of leaf nodes, while the B-Tree needs to traverse both internal and leaf nodes. 
 
 ==== T3: Write #gls("Throughput") Over Time
-This test should mimic a workload in for instance time series database where new data is continuously inserted into the database. Unlike the static lookups in T1 and T2, T3 focuses on the write path and the overhead associated with structural maintenance—such as #gls("B-Tree") page splits or #gls("LSM-Tree") compactions—under continuous load.
+This test should mimic a workload in for instance time series database where new data is continuously inserted into the database. Unlike the static lookups in T1 and T2, T3 focuses on the write path and the overhead associated with structural maintenance—such as B-Tree page splits or LSM-Tree compactions—under continuous load.
 
 The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number if random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a szenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the #gls("Throughput") then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start")) $.
 
@@ -599,7 +599,7 @@ The benchmark uses a windowed measurement approach where, instead of calculating
 ```],
 )
 
-In this test, the #gls("LSM-Tree") should perform much better than the #gls("B-Tree") and #gls("B+-Tree") since it can write new data to the in-memory component without needing to immediately update the on-disk structure, while the #gls("B-Tree") and #gls("B+-Tree") need to perform page splits and other maintenance operations that can significantly degrade write performance under continuous load. 
+In this test, the LSM-Tree should perform much better than the B-Tree and B+-Tree since it can write new data to the in-memory component without needing to immediately update the on-disk structure, while the B-Tree and B+-Tree need to perform page splits and other maintenance operations that can significantly degrade write performance under continuous load. 
 
 
 ==== T4 & T5: Mixed Workload Analysis
