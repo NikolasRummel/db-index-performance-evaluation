@@ -25,11 +25,10 @@
   university-short: "DHBW",
   // for more options check the package documentation (https://typst.app/universe/package/clean-dhbw)
   appendix: [
-  = Acronyms
+    = Acronyms
  
-  #print-glossary(acrolist-entries)
-]
-
+    #print-glossary(acrolist-entries)
+  ]
 )
 #include "sections/introduction/introduction.typ"
 #include "sections/fundamentals/dbms/dbms.typ"

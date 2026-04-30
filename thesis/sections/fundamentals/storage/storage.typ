@@ -4,8 +4,8 @@
 
 #pagebreak()
 
-= Storage in DBMS <storage>
-== HDD,SSD?
+= Storage in #gls("DBMS") <storage>
+== #gls("HDD"),#gls("SSD")?
 == Buffering 
 === Buffer Pool
 === Page Replacement Policies
