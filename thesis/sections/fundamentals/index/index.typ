@@ -5,28 +5,26 @@
 = Index Structures in DBMS <index>
 
 == Motivation for Database Index Structures
-When the stored data in a #gls("DBMS") grows, it gets more and more important to efficiently queiry the data. 
+When the stored data in a #gls("DBMS") grows, it gets more and more important to efficiently query the data. 
 
-To explain the basic concept, imagine a szenario of a user searching for movies and series of a specific actor at Netflix. With approx 8000 TODO: better example with more data titles available , a scan though all titles to find the one maching the search query would take a long time. 
-
-To explain the basic concept, imagine a scenario where a user searches for a specific profile on a social media platform like Facebook. With approximately 3.07 billion users @statista_socialnetworks, a simple scan through all user records to find a single person would be practically impossible in real-time.
+To explain the basic concept, imagine a scenario where a user searches for a specific profile on a social media platform like `Facebook`. With approximately 3.07 billion users @statista_socialnetworks, a simple scan through all user records to find a single person would be practically impossible in real-time.
 
 ```sql
 SELECT * FROM users WHERE username = 'Nikolas Rummel';
 ```
 
-With a simple scan of the data, this query would have a performance of O(n), because in the worst case, all usernames have to be checked.
-To optimize this search prozess, a datastructure saving the usernames in a smart way would benefit and reduce the amount of scans by a lot. This can be archieved by using an index structure, which allows to find the relevant data much faster.
+With a simple scan of the data, this query would have a performance of $O(n)$, because in the worst case, all usernames have to be checked.
+To optimize this search process, a datastructure saving the usernames in a smart way would benefit and reduce the amount of scans by a lot. This can be archieved by using an index structure, which allows to find the relevant data much faster.
 
-An index is a data stucture allowing to quickly locate the data we are looking for, without having to scan all the data. We can define the index on a specific attribute A, for instance on our example on the username attribute @dbsystems_complete[P.~350]. This index will then speed up queries where A should match a specific value, like in our example above (A='Nikolas Rummel'). A very fast index would be a Hashmap, which could allow to find the title in O(1) time. However, which data structure is used for the index however depends on the use case and workload, which will be discussed in the following chapters.
+An index is a data stucture allowing to quickly locate the data we are looking for, without having to scan all the data. We can define the index on a specific attribute $A$, for instance on our example on the username attribute @dbsystems_complete[P.~350]. This index will then speed up queries where $A$ should match a specific value, like in our example above (A='Nikolas Rummel'). A very fast index would be a hashmap, which could allow to find the username in $O(1)$ time. However, which data structure is used for the index depends on the use case and workload, which will be discussed in the following chapters.
 
 == Types of Database Index Structures
 
-As mentoned, there are different data structures which can be used as index structures in a database system. In the following, two of the most common index structures, B-Trees and LSM-Trees, will be explained in more detail.
+As mentoned, there are different data structures which can be used a index in a database system. In the following, the main ideas of search-trees (B-Trees and B+-Trees) and LSM-Trees will be explained in more detail.
 
 === Search Tree-Based Index Structures <search-trees>
 #let p = $p$
-In order to understand the most common data structure for DBMS, the B+-Tree @elmasri2016 [p. 618], we will start with standard search trees. 
+In order to understand the most common data structure for #gls("DBMS"), the B+-Tree @elmasri2016 [p. 618], we will start with standard search trees. 
 
 
 
@@ -107,10 +105,10 @@ In this example, the search tree has a degree of $p=3$, meaning that each #gls("
 
 ==== Performance Considerations
 
-In our case from @unbalanced-tree, the search tree is unbalanced, meaning that not all paths from the root #gls("Node") to all leafes have the same length @dbsystems_complete[p. 634]. Therefore, we can see that we almost searched all #gls("Node", plural: true) to find the key 35. In the worst case, the tree could basically just be a linked list, where a search would result in $O(n)$ time complexity. With this there would not be any advantage of using a search tree over kust scanning the data. In order to avoid this problem, it makes sence to use a balanced search tree.
+In our case from @unbalanced-tree, the search tree is unbalanced, meaning that not all paths from the root #gls("Node") to all leafes have the same length @dbsystems_complete[p. 634]. Therefore, we can see that we almost searched all #gls("Node", plural: true) to find the key 35. In the worst case, the tree could basically just be a linked list, where a search would result in $O(n)$ time complexity. With this there would not be any advantage of using a search tree over just scanning the data. In order to avoid this problem, it makes sence to use a balanced search tree.
 
 === B-Trees <btree>
-To ensure that a search tree stays balanced, we can use a B-Tree. They where first described by Bayer and McCreight in 1972 @btree_original and are widely used in database systems both releational and non-relational @kleppmann[p. 80].
+To ensure that a search tree stays balanced, we can use a B-Tree. They where first described by Bayer and McCreight in 1972 @btree_original and are widely used in database systems both relational and non-relational @kleppmann[p. 80].
 B-Trees are search trees with some additional constraints to ensure that the tree remains balanced @elmasri2016[p. 619], thus maintaining a $O(log n)$ time complexity for search, insert, and delete operations. Another reason in favor of B-Trees is that the #gls("Node") size can be fixed to a database #gls("Page") size. This alignment ensures that adding or removing a #gls("Node") corresponds exactly to the allocation or deallocation of a single database #gls("Page"), allowing the buffer manager to efficiently manage the pages. 
 
 In addition, B-Trees were designed because the complete index structure does not fit in memory, so the tree is stored on disk @btree_original[p. 173]. This means that only a part of the tree is in memory at any given time, and the rest is stored on disk. To manage this, each B-Tree #gls("Node") contains a list of keys, pointers to child #gls("Node", plural: true) and record pointers to the actual data records on disk. 
@@ -200,17 +198,17 @@ The constraints for a B-Tree of order $p$ are as follows @elmasri2016[p. 619] @d
 A lookup operation in a B-Tree is similar to a normal search tree like in @unbalanced-tree @kleppmann[p. 80]. We start at the root #gls("Node") and compare the search key with the keys in the node. If we find a match, we return the corresponding record pointer to the disc and read from there the according value. If not, we follow the appropriate pointer to the child #gls("Node") based on the key comparison. We repeat this process until we either find the key or reach a NULL pointer in a #gls("Leaf Node"), meaning the search key is not present in the tree.
 
 ==== Insertion 
-Insertion might seem trivial at first, if there is some space in a node, insert the new key in the correct position to maintain the order. However as described Garcia-Molina et al. @dbsystems_complete [pp. 640-641], if the #gls("Node") is full, we need to split the #gls("Node") into two #gls("Node", plural: true) and promote the middle key to the parent #gls("Node") to maintain the B-Tree properties. This process may propagate up to the root node, potentially increasing the height of the tree @btree_original[p. 178].
+Insertion might seem trivial at first: if there is some space in a node, insert the new key in the correct position to maintain the order. However as described by Garcia-Molina et al. @dbsystems_complete [pp. 640-641], if the #gls("Node") is full, we need to split the #gls("Node") into two #gls("Node", plural: true) and promote the middle key to the parent #gls("Node") to maintain the B-Tree properties. This process may propagate up to the root node, potentially increasing the height of the tree @btree_original[p. 178].
 
 ==== Deletion 
 Again, deletion is most likely to be more complex than just removing the key from the node. First, it performes a lookup to find the key to be deleted @dbsystems_complete[p. 642] @btree_original[p. 190]. If the key is found in a #gls("Leaf Node"), it can be removed directly. However, if the key is in an #gls("Internal Node"), we again need to maintain the B-Tree properties described in @dbsystems_complete[p. 643] @btree_original[pp 180-182].
 
 ==== Range Query
-Rangies Querys are a common operation in database systems, where we want to retrieve all keys within a specific range, for instance all titles between 'A' and 'D' @dbsystems_complete[p. 639]. For this example, we would do a lookup for the start key 'A' and then traverse the #gls("Leaf Node", plural: true) sequentially until we reach the end key 'D' with depth first in order walk. However, this will traverse all #gls("Node", plural: true) in the range, which can be inefficient if the range is large. B+-Trees address this issue with #gls("Leaf Node") chaining @, which will be explained in the next section.
+Range queries are a common operation in database systems, where we want to retrieve all keys within a specific range, for instance all usernames between 'A' and 'D' @dbsystems_complete[p. 639]. For this example, we would do a lookup for the start key 'A' and then traverse the #gls("Node", plural: true) sequentially until we reach the end key 'D' with a depth first in order tree-walk. However, this will traverse all #gls("Internal Node", plural: true) and  #gls("Leaf Node", plural: true) in the range, which can be inefficient if the range is large. B+-Trees address this issue with #gls("Leaf Node") chaining, which will be explained in the next section.
 
 === B+-Trees <b-plus>
 B+-Trees are a variant of B-Trees, fixing the problem of inefficient range queries in normal B-Trees. For this reason, B+-Trees are the most commonly used index structure in database systems @elmasri2016[p. 622]. 
-The main difference between B-Trees and B+-Trees is that in B+-Trees, all data pointers are stored in the leafe nodes, resulting that #gls("Internal Node", plural: true) only store keys and pointers to child nodes, but no record pointers to the actual data records @elmasri2016[p. 622].
+The main difference between B-Trees and B+-Trees is that in B+-Trees, all data pointers are stored within the #gls("Leaf Node", plural: true), resulting that #gls("Internal Node", plural: true) only store keys and pointers to child nodes, but not record pointers to the actual data records on disk @elmasri2016[p. 622].
 The advantage now is that all #gls("Leaf Node", plural: true) are linked together in a linked list, allowing for efficient range queries by following the pointer to the next #gls("Leaf Node") after finding the start key in the #gls("Leaf Node").
 
 #figure(
@@ -317,19 +315,19 @@ The advantage now is that all #gls("Leaf Node", plural: true) are linked togethe
   })
 ) <b-plus-disk-mapping>
 
-Now, for a lookup, we follow the same logic like in a normal B-Tree, but will wend in a leaf page in order to get the reccord pointer to the actual data record on the disk. For a range query, we can now follow the pointer to the next #gls("Leaf Node") after finding the start key in the #gls("Leaf Node"), which allows for efficient range queries by traversing the linked list of #gls("Leaf Node", plural: true). 
+Now, for a lookup, we follow the same logic like in a normal B-Tree, but will end in a leaf page in order to get the record pointer to the actual data record on the disk. For a range query, we can now follow the pointer to the next #gls("Leaf Node") after finding the start key in the #gls("Leaf Node"), which allows for efficient range queries by following the linked list of #gls("Leaf Node", plural: true). 
 
 
 ==== Drawbacks of B-Trees <drawbacks-btree>
 However, the B+-Tree (and B-Tree as well) still is not a perfect solution for every possible scenario and they have some drawbacks. First, they are not optimized for write-heavy workloads, since each write operation requires multiple disk I/O operations to maintain the index structure on disk @lsm_original[p. 351]. This will effectively double the I/O cost of the
-transaction to maintain an index such as this in real time, increasing the total system cost up to fifty percent @lsm_original[p. 351]. Secondly, after a page split a B-Tree, some space in those pages is wasted, which leads to fragmentation @kleppmann[p. 84]. In addition, those B-Trees are not crash-safe since they update in place, meaning that in case of a crash while a merge or split is happening, the tree could be left in an inconsistent state @lsm_original[p. 351]. To mitigate this problem, a #gls("WAL") can be used, which would lead do a lot of #gls("writeamplification"), since we would have to write the log entry and then write the actual data to the disk, which would double the write cost. @kleppmann[p. 82]
+transaction to maintain an index such as this in real time, increasing the total system cost up to fifty percent @lsm_original[p. 351]. Secondly, after a page split a B-Tree, some space in those pages is wasted, which leads to fragmentation @kleppmann[p. 84]. In addition, those B-Trees are not crash-safe since they update in place, meaning that in case of a crash while a merge or split is happening, the tree could be left in an inconsistent state @lsm_original[p. 351]. To mitigate this problem, a #gls("WAL") can be used, which would lead do a lot of #gls("writeamplification"), since we would have to write the log entry and then write the actual data to the disk, which would double the write cost @kleppmann[p. 82].
 
 
 === LSM-Trees (Log-Structured Merge Trees)
 Log-Structured Merge Trees (LSM-Trees) are a type of index structure designed for high write throughput @lsm_original[p. 351] and was originally proposed by O'Neil et al. in 1996 @lsm_original. The reason for the design of a new index structure was that the standard disk-based index structures such as the B-tree have some those drawbacks mentioned in @drawbacks-btree, which are especially problematic for write-heavy workloads. LSM-Trees are designed to optimize write performance by batching writes together and writing them sequentially to disk, which minimizes the number of disk I/O operations required for each write and thus significantly improves write performance @lsm_original[p. 351]. 
 
 ==== LSM-Tree Structure according to O'Neil et al. <lsm_oneil>
-The fundamental concept of an LSM-Tree is based to batch writes together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
+In LSM-Trees writes are batched together for index updates, meaning not immediately updating the index on disk for each write operation, but instead writing to an in-memory structure and periodically merging it with the on-disk index @lsm_original[p. 355]. 
 This is done using a hierachy of components (also called trees):
 
 - *$C_0$ Component:* This is the in-memory component where all new writes are initially stored which could use a 2-3 Tree or AVL Tree, since it doesnt neet to insist on disk page size constraints @lsm_original[p. 356]. 2-3 or AVL Trees are another type of balanced search tree, which will not be explained in detail here, but they also have a logarithmic time complexity @intro_algorithms [358], @intro_algorithms [502]. All new writes are first written to this component, since it is in-memory, it allows for very fast write operations. This implies two things: First, the data needs to be written to the disk ($C_1$ Component) at some point and second, the data is not savely stored in case of a crash @lsm_original[p. 355]. 
@@ -346,7 +344,7 @@ A *Lookup* in a LSM-Tree now works by starting in the in memory $C_0$ component 
 
 As mentioned, the $C_0$ Component is periodically merged into the $C_1$ Component, which O'Neil et al. call a "rolling merge" @lsm_original[p. 355]. The rough idea is to merge the $C_0$ and $C_1$ components together, by using a merge sort-like process, where we read the sorted keys from both components and write them into a new on-disk component $C_1$ while maintaining the sorted order. Since this is done in a sequential manner, there is no need for seek time and rotational latency of discs, which allows for very efficient write operations in comparison to B-Trees @lsm_original[p. 358]. This process is then repeated for the other on-disk components $C_k$ with $k in N$ as well, where we merge the smaller, higher-level component $C_n$ with the larger, lower-level $C_(n+1)$ to produce a new, optimized $C_(n+1)$ component @lsm_original[p. 355].
 
-An example of this process is shown in the following figure @lsm-rolling-merge2. Imagine a bank account database where we have a $C_n$ component with recent updates and deletions, and an old $C_(n+1)$ component with existing entries. During the merge, the updated values from $C_n$ will replace their older counterparts in $C_(n+1)$, while tombstone markers indicating deletions will lead to the removal of those entries in the new $C_(n+1)$ component. This process ensures that the new on-disk component reflects the most up-to-date state of the data while maintaining efficient write performance @kleppmann[p. 79].
+An example of this process is shown in the following figure, @lsm-rolling-merge2. Imagine a bank account database where we have a $C_n$ component with recent updates and deletions, and an old $C_(n+1)$ component with existing entries. During the merge, the updated values from $C_n$ will replace their older counterparts in $C_(n+1)$, while tombstone markers indicating deletions will lead to the removal of those entries in the new $C_(n+1)$ component. This process ensures that the new on-disk component reflects the most up-to-date state of the data while maintaining efficient write performance @kleppmann[p. 79].
 
 #figure(
   caption: [Example of rolling merge process. The smaller upper component carries both updated values and tombstone markers (#smallcaps[del]). During the merge new values replace their older counterparts in $C_(n+1)$, while tombstones lead to deletion meaning they are not written to the new $C_(n+1)$. Adapted from @kleppmann[Fig. 3.3, p. 74]],
