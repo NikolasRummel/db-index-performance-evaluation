@@ -59,7 +59,7 @@ Therefore, the following criteria with weighting were considered for the selecti
 ==== Gathering of Candidate Languages
 To provide a justification for the selection, two methods were used to select languages which then were evaluated based on the criteria above:
 + *GitHub Repository Analysis* A search for "database" projects on GitHub revealed that the most "starred" and influential open-source storage engines are predominantly built using C, C++, Go, and Rust. 
-+ *DB-Engines Ranking Evaluation:* The DB-Engines Ranking @dbengines_ranking, which measures the popularity and market adoption of almost 400 #gls("DBMS"), was consulted to identify the implementation languages of the world's most successful databases. Here, `MySQL` is written in C and C++, `PostgreSQL` in C, `MongoDB` in C++. TODO Cite https://www.tencentcloud.com/techpedia/134379 or search better sources.
++ *DB-Engines Ranking Evaluation:* The DB-Engines Ranking @dbengines_ranking, which measures the popularity and market adoption of almost 400 #gls("DBMS"), was consulted to identify the implementation languages of the world's most successful databases. Here, `MySQL` is written in C and C++, `PostgreSQL` in C, `MongoDB` in C++.
 
 
 ==== Matrix for Decision
@@ -82,7 +82,7 @@ The candidate languages were scored from 1 (lowest) to 5 (highest) based on the 
 ==== Result
 For this project, the Go programming language was choosen for the implementation of the index structures and the benchmark. 
 Inspired by the C programming language, Go is a statically typed, compiled language that however also provides high-level features like garbage collection and built-in support for concurrency @golang[preface p. xii] @godocs. Go was created by Google since they were dealing more and more with complex software systems @golang[preface p. xiiii] and now is widely used in the industry #footnote[https://survey.stackoverflow.co/2025/technology#most-popular-technologies-language]. 
-With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languares like C++ and Rust may be more performant but are more complex to work with, which is why Go was choosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some @#gls("DBMS") like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
+With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languares like C++ and Rust may be more performant but are more complex to work with, which is why Go was choosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some #gls("DBMS") like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
 
 === Libraries
 In order to implement the benchmark and the index structures, some libraries will be used to facilitate the implementation. As mentioned before, for the #gls("LSM-Tree") implementation, an existing library will be used. In addition, some libraries will be used for plotting and visualization of the results. 
@@ -98,7 +98,7 @@ The benchmark will consist of mainly two components. The `benchmark` package wil
 The `benchmark` package will be responsible for implementing all tests and their execution. The `Benchmark Runner` will be responsible for executing the tests and collecting the results, while the `Dataset Generator` will be responsible for generating the dataset that will be used for the tests. The `Result Plotter` will be responsible for creating the visualizations of the results in form of graphs and charts.
 
 === Package `dbms`
-The `dbms` package will be responsible for implementing the index structures and the buffer manager. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The `#gls("B-Tree")`, `#gls("B+-Tree")` and `#gls("LSM-Tree")` components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
+The `dbms` package will be responsible for implementing the index structures and the buffer manager. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The #gls("B-Tree"), #gls("B+-Tree") and #gls("LSM-Tree") components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
 
 Since only the #gls("B-Tree") and #gls("B+-Tree") will be implemented from scratch, the #gls("LSM-Tree") component will be a wrapper and not use our buffer manager.
 
