@@ -3,22 +3,22 @@
 
 = Design and Implementation <design>
 
-The goal of this chapter is to describe the design of the benchmark and the implementation of the storage manager, index structures and some highlights on the benchmark itself. The benchmark will be designed to evaluate the performance of different index structures under various workloads, and the implementation will be done in Go programming language.
+The goal of this chapter is to describe the design of the benchmark and the implementation of the `Storage Manager`, index structures and some highlights on the benchmark itself. The goal is to give an overview of the design and implementation of the benchmark and to show how the different components of the benchmark work together to achieve the goals of the thesis.
 
 == Requirements 
 In order to design the benchmark, we can use typical software engineering practices and first define the requirements for the benchmark. These requirements will guide the design and implementation of the benchmark and ensure that it meets the goals of the thesis. The requirements can be categorized into functional requirements, which describe what the benchmark should do, and non-functional requirements, which describe how the benchmark should perform.
 
 === Functional Requirements <fr>
 For the benchmark, the following index structures will be implemented and compared:
-- *B-Tree:* A normal B-Tree where data is stored in both internal and leaf nodes should be implemented like described in @btree
-- *B+-Tree:* A B+-Tree where data is only stored in linked leaf nodes based in order to compare the range query performance. Moreove because B+-Trees are the most common index structure used in #gls("DBMS").
+- *B-Tree:* A normal B-Tree where data is stored in both #gls("Internal Node", plural: true) and in #gls("Leaf Node", plural: true) should be implemented like described in @btree
+- *B+-Tree:* A B+-Tree where data is only stored in linked #gls("Leaf Node", plural: true) based in order to compare the range query performance. Moreove because B+-Trees are the most common index structure used in #gls("DBMS").
 - *LSM-Tree:* Since there is not enough time to implement a full LSM-Tree from scratch, an existing implementation will be used. For this, some evaluation will be done on existing Go libraries and then the best fitting one will be choosen to be used. 
 
 In order to compare the performance of these index structures and answering the research questions, the benchmark will consist of multiple tests (T1-T5) that will evaluate different aspects of the index structures under different workloads. The following will be designed to measure the following performance metrics:
 
-+ *Point query lookup (T1):* This test measures the response time of retrieving a single value associated with a specific, randomly selected key. The benchmark executes a high volume of unique lookups against a pre-populated index to calculate average, median and the 95th percentile response time. This simulates typical #gls("OLTP") workloads where fast access to individual records is critical. The output should be a box plot showing the distribution of latencies for each index structure.
++ *Point query lookup (T1):* This test measures the response time of retrieving a single value associated with a specific, randomly selected key. The benchmark executes a high volume of unique lookups against a pre-populated index to calculate average, median and the 95th percentile response time. This simulates typical #gls("OLTP") workloads where fast access to individual records is critical. The output should be a box plot showing the distribution of response times for each index structure.
 
-+ *Range query lookup (T2):* Here, the benchmark evaluates the performance of range queries by measuring the time taken to retrieve all key-value pairs within a specified key range $[R_s;R_e]$. The test captures the response time of executing range queries of varying sizes to analyze how fast the index structures handle larger result sets, which is important for #gls("OLAP") workloads. The output should be a line graph showing the response time of range queries as the size of the result set increases for each index structure.
++ *Range query lookup (T2):* Here, the benchmark evaluates the performance of range queries by measuring the time taken to retrieve all key-value pairs within a specified key range $[R_s;R_e]$. The test captures the response time of executing range queries of varying sizes to analyze how fast the index structures handle larger result sets, which is important for #gls("OLAP") workloads. The output should be a line graph showing the response time of range queries as the size of the result set increases for each index structure. Also with the results of this test, the second research question can be answered on how much the performance of range queries differs between B-Trees and B+-Trees.
 
 + *Write throughput over time (T3):* This test measures the write throughput of each index structure by continuously inserting new key-value pairs over a fixed duration while monitoring the number of insertions per second. This simulates write-heavy workloads especially as the dataset grows. The output should be a time series graph showing the write throughput over time for each index structure.
 
@@ -72,11 +72,11 @@ The candidate languages were scored from 1 (lowest) to 5 (highest) based on the 
   align: horizon,
   [*Criterion*], [*Weight*], [*C*], [*C++*], [*Rust*], [*Go*], [*Java*],
   [System Performance], [0.25], [5], [5], [5], [4], [2],
-  [Language Complexity], [0.20], [3], [2], [1], [5], [4],
+  [Language Complexity], [0.20], [3], [2], [1], [5], [5],
   [Community & Ecosystem], [0.15], [5], [5], [4], [4], [5],
   [Personal Experience], [0.20], [2], [2], [1], [4], [5],
   [Learning Objectives], [0.20], [3], [3], [5], [5], [1],
-  [*Total Score*], [1.00], [3.65], [3.45], [3.25], [*4.4*], [3.20],
+  [*Total Score*], [1.00], [3.65], [3.45], [3.25], [*4.4*], [3.45],
 )
 
 ==== Result
@@ -84,12 +84,15 @@ For this project, the Go programming language was choosen for the implementation
 Inspired by the C programming language, Go is a statically typed, compiled language that however also provides high-level features like #gls("gc") and built-in support for concurrency @golang[preface p. xii] @godocs. Go was created by Google since they were dealing more and more with complex software systems @golang[preface p. xiiii] and now is widely used in the industry #footnote[https://survey.stackoverflow.co/2025/technology#most-popular-technologies-language]. 
 With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languares like C++ and Rust may be more performant but are more complex to work with, which is why Go was choosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some #gls("DBMS") like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
 
-=== Libraries
-In order to implement the benchmark and the index structures, some libraries will be used to facilitate the implementation. As mentioned before, for the LSM-Tree implementation, an existing library will be used. In addition, some libraries will be used for plotting and visualization of the results. 
+=== Libraries used
+In order to implement the benchmark and the index structures, some libraries will be used to facilitate the implementation. 
 
+For the implementation of the LSM-Tree, the library  #link("https://github.com/cockroachdb/pebble/")[Pebble]  is used. `Pebble` is a high-performance embedded key-value store written in Go and developed by Cockroach Labs. It is inspired by `LevelDB` and `RocksDB`, and used by `CockroachDB`, a distributed SQL database @cockroach_pebble. Using Pebble allows leveraging a already working LSM-Tree implementation while focusing the project on benchmarking and analysis rather than low-level storage engine construction, since also implementing a full LSM-Tree from scratch would be too time consuming for this project.
+
+For visualization of benchmark results, the library #link("https://github.com/go-echarts/go-echarts")[go-echarts] will be used. This library provides a straightforward API for generating interactive charts in Go, supporting common visualization types such as line charts, bar charts, and scatter plots. These visualizations will be displayed in a html website generated by the benchmark to allow for an easy analysis of the results.
 
 == Architectural Overview
-The benchmark will consist of mainly two components. The `benchmark` package will be responsible for implementing the benchmark and the tests, while the `dbms` package will be responsible for implementing the index structures and the storage manager. 
+The benchmark will consist of mainly two components. The `benchmark` package will be responsible for implementing the benchmark and the tests, while the `dbms` package will be responsible for implementing the index structures and the `Storage Manager` . 
 
 
 #figure(caption: "Component Diagramm of the Benchmark", image( "../../assets/comp.svg"))
@@ -98,9 +101,9 @@ The benchmark will consist of mainly two components. The `benchmark` package wil
 The `benchmark` package will be responsible for implementing all tests and their execution. The `Benchmark Runner` will be responsible for executing the tests and collecting the results, while the `Dataset Generator` will be responsible for generating the dataset that will be used for the tests. The `Result Plotter` will be responsible for creating the visualizations of the results in form of graphs and charts.
 
 === Package `dbms`
-The `dbms` package will be responsible for implementing the index structures and the buffer manager. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The B-Tree, B+-Tree and LSM-Tree components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
+The `dbms` package will be responsible for implementing the index structures and the `Buffer Manager`. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The B-Tree, B+-Tree and LSM-Tree components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
 
-Since only the B-Tree and B+-Tree will be implemented from scratch, the LSM-Tree component will be a wrapper and not use our buffer manager.
+Since only the B-Tree and B+-Tree will be implemented from scratch, the LSM-Tree component will be a wrapper and not use our `Buffer Manager` .
 
 
 === Entry Point (main.go)
@@ -197,7 +200,7 @@ func (p *Pager) Read(id uint64) (*Page, error) {
 ```],
 )
 
-Now that we have a simple buffer manager implemented, we can use it for the implementation of the index structures. 
+Now that we have a simple `Buffer Manager` implemented, we can use it for the implementation of the index structures. 
 
 == Index implementations
 In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for a easy comparison of the different index structures under the same workloads and conditions. The interface will include normal #gls("CRUD") operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
