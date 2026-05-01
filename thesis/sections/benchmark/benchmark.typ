@@ -138,13 +138,13 @@ Also, an `Open()` function will be used to initialize a file with a page (Page 0
 #figure(
   caption: "Simplified Open() function of the Pager component.",
   sourcecode[```go
-func Open(path string, cacheSize int, pageSize uint32) (*Pager, error) {
+func Open(path string, cachePages int, pageSize uint32) (*Pager, error) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 
 	p := &Pager{
-		file:  f,
-		cache: newLRUCache(cacheSize),
-    PageSize: pageSize,
+		file:     f,
+		cache:    newLRUCache(cachePages),
+		PageSize: pageSize,
 	}
 
 	exists, err := p.fileExists()
@@ -168,7 +168,7 @@ The pager also implements a cache to optimize the read and write operations. For
   sourcecode[```go
 type lruEntry struct {
     id   uint64      // Unique identifier of the page
-    page *Page       // Pointer to the cached page content
+    page Page        // Pointer to the cached page content
     prev *lruEntry   // Pointer to the more recently used entry
     next *lruEntry   // Pointer to the less recently used entry
 }
@@ -186,7 +186,7 @@ The detailed implementation can be found in the source code, but with this idea,
 #figure(
   caption: "Read() function of the Pager component using the LRU cache.",
   sourcecode[```go
-func (p *Pager) Read(id uint64) (*Page, error) {
+func (p *Pager) Read(id uint64) (Page, error) {
 	if pg := p.cache.get(id); pg != nil {
 		return pg, nil
 	}
@@ -462,19 +462,19 @@ To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble D
       db *pebble.DB
     }
     func Open(dir string, memSize int64) (*LSM, error) {
-    targetSize := memSize * 1024 * 1024
+      targetSize := memSize * 1024 * 1024
 
-    opts := &pebble.Options{
-      DisableWAL:   true, // Disable for fairness with B-trees (which has no WAL)
-      MemTableSize: uint64(targetSize),
-    }
+      opts := &pebble.Options{
+        DisableWAL:   true, // Disable for fairness with B-trees (which has no WAL)
+        MemTableSize: uint64(targetSize),
+      }
 
-    db, err := pebble.Open(dir, opts)
-    if err != nil {
-      return nil, fmt.Errorf("lsm: open: %w", err)
+      db, err := pebble.Open(dir, opts)
+      if err != nil {
+        return nil, fmt.Errorf("lsm: open: %w", err)
+      }
+      return &LSM{db: db}, nil
     }
-    return &LSM{db: db}, nil
-  }
 ```],
 )
 
@@ -562,7 +562,7 @@ for _, def := range indices {
         P50Ns:     pct(responetimes, 50),
         P99Ns:     pct(responetimes, 99),
         OpsPerSec: float64(cfg.PointQueryCount) / totalDuration.Seconds(),
-        MemBytes:  memUsage,
+        //...
     }
     // Save result to CSV...
 }
@@ -570,7 +570,6 @@ return nil
 }
 ```],
 )
-TODO: remove memory
 
 ==== T2: Range Query Performance
 Here, the implementation is similar to T1, but instead of measuring the response time for retrieving a single value, the response time for retrieving all key-value pairs within a specified key range is measured. During this test, not only one key range is used, but multiple ranges of always doublig size are used to evaluate how the performance of the index structures changes as the size of the result set increases. As default value, the minimum range is 4096 keys and the maximum is $4096*2^10$. 
@@ -580,7 +579,7 @@ The detailed implementation can be found in the source code, but the main idea i
 ==== T3: Write throughput Over Time
 This test should mimic a workload in for instance time series database where new data is continuously inserted into the database. Unlike the static lookups in T1 and T2, T3 focuses on the write path and the overhead associated with structural maintenance—such as B-Tree page splits or LSM-Tree compactions—under continuous load.
 
-The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number if random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a scenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the throughput then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start")) $.
+The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number if random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a scenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the throughput then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start"))$.
 
 #figure(
   caption: [Core logic for windowed write Throughput measurement (T3)],
@@ -588,7 +587,8 @@ The benchmark uses a windowed measurement approach where, instead of calculating
   // Loop until total number of write operations is reached
   for i := 0; i < cfg.WriteOpsTotal; i++ { 
       key := rng.Int63()
-      val := generateRandomValue(cfg.ValueSize)
+      val := make([]byte, cfg.ValueSize)
+      rng.Read(val) // fill value with random bytes
 
       // Execute the insertion
       idx.Insert(key, val)
@@ -598,9 +598,7 @@ The benchmark uses a windowed measurement approach where, instead of calculating
       if windowOps >= cfg.WriteOpsWindow {
           duration := time.Since(windowStart).Seconds()
           opsPerSec := float64(windowOps) / duration
-          memUsage := getMemUsage()
-          
-          // Record throughput for this interval
+          recordThroughput(idx.Name(), i, opsPerSec) // Save throughput for this window
           windowStart = time.Now()
           windowOps = 0
       }
