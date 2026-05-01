@@ -138,12 +138,13 @@ Also, an `Open()` function will be used to initialize a file with a page (Page 0
 #figure(
   caption: "Simplified Open() function of the Pager component.",
   sourcecode[```go
-func Open(path string, cacheSize int) (*Pager, error) {
+func Open(path string, cacheSize int, pageSize uint32) (*Pager, error) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
 
 	p := &Pager{
 		file:  f,
 		cache: newLRUCache(cacheSize),
+    PageSize: pageSize,
 	}
 
 	exists, err := p.fileExists()
@@ -452,7 +453,7 @@ In the benchmark we will see how much faster this approach is for range queries 
 === LSM-Tree Implementation
 To implement the existing LSM-Tree implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
 
-To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface:
+To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface. The `Open()` function will be responsible for initializing the Pebble DB with the appropriate options, such as the memory size for the memtable and disabling the write-ahead log (WAL) to ensure a fair comparison with the B-Tree and B+-Tree implementations, which also do not use a WAL.
 
 #figure(
   caption: "Ein Stück Quellcode",
@@ -460,14 +461,20 @@ To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble D
     type LSM struct {
       db *pebble.DB
     }
-    func Open(dir string) (*LSM, error) {
-      opts := &pebble.Options{}
-      db, err := pebble.Open(dir, opts)
-      if err != nil {
-        return nil, fmt.Errorf("lsm: open: %w", err)
-      }
-      return &LSM{db: db}, nil
+    func Open(dir string, memSize int64) (*LSM, error) {
+    targetSize := memSize * 1024 * 1024
+
+    opts := &pebble.Options{
+      DisableWAL:   true, // Disable for fairness with B-trees (which has no WAL)
+      MemTableSize: uint64(targetSize),
     }
+
+    db, err := pebble.Open(dir, opts)
+    if err != nil {
+      return nil, fmt.Errorf("lsm: open: %w", err)
+    }
+    return &LSM{db: db}, nil
+  }
 ```],
 )
 
@@ -519,8 +526,8 @@ In addition, it is possible to not just generate random keys, but also sorted on
 The `Benchmark Runner` will be responsible for executing the tests and collecting the results. Each test will be implemented as a separate function that takes the dataset and the index structures as input and returns the results of the test. The `Benchmark Runner` will then execute each test for each index structure and writes the result in a csv file for plotting and visualization. 
 
 ==== T1: Point Query Performance
-In order to implement the point query test, a random dataset is generated with 10 Million key-value pairs and each index structure is pre-populated with this dataset. 
-Next, 50.000 random keys are selected from the dataset and the response time for retrieving the value associated with each key is measured for each index structure. The results are then used to also calculate all needed metrics like the average, median and interquartile range for the box plot visualization, which are written to a csv file for plotting.
+In order to implement the point query test, a random dataset is generated with 5 million key-value pairs and each index structure is pre-populated with this dataset. 
+Next, 1 million random keys are selected from the dataset and the response time for retrieving the value associated with each key is measured for each index structure. The results are then used to also calculate all needed metrics like the average, median and interquartile range for the box plot visualization, which are written to a csv file for plotting.
 
 #figure(
   caption: "Simplified implementation of the Point Query Benchmark (T1)",
@@ -545,7 +552,6 @@ for _, def := range indices {
     }
 
     totalDuration := time.Since(start)
-    memUsage := getMemUsage()
     idx.Close()
 
     // 3. Statistical aggregation
