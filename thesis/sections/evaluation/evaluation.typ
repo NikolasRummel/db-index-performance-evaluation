@@ -61,8 +61,6 @@ The data in @t1boxplot reveals a clear performance gap between the standard B-Tr
 
 The data in @t1boxplot shows that B+-Trees are faster then normal B-Trees. Comparing the smallest configurations of both index types, the #strong([B+-Tree (4k)]) with a median time of 2.5 $mu s$ its about two times faster than the #strong([B-Tree (4k)]) with a median time of 4.75 $mu s$. As explained in @b-plus, B+-Trees store more keys per node, which lead to a smaller tree. During this test, the #strong([B-Tree 4k]) has a height of 6 while the #strong([B+-Tree (4k)]) has a height of 4. This means for a point query, the #strong([B-Tree (4k)]) needs to fetch up to 6 pages from disk, while the #strong([B+-Tree (4k)]) only needs to fetch 4 pages, which results in a significant performance improvement. This also applied for larger page sizes, where the B+-Trees are consistently faster than the B-Trees.
 
-
- 
 #figure(
   caption: [T1: Point Query Throughput],
   image(width: 100%, "../../assets/results/t1throughput.png")
