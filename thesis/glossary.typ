@@ -6,7 +6,7 @@
   ),
   (
     key: "writeamplification",
-    short: "Write Amplification",
+    short: "write amplification",
     description: "Write amplification is a phenomenon where the anoubt of data written to the storage media is greater than the amount of data intended to be written. The goal is to minimize write amplification, as it can lead to increased wear on storage devices and unnecessary writes.",
   ),
   (
