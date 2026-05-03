@@ -95,7 +95,7 @@ $$
 $ T_(a c c e s s) = T_(s e e k) + T_(r o t) + T_(t r a n s f e r) $
 $$
 
-Data is then read or written in #gls("Block")s, which are typically 4KB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access lead to increased latency due to the need for the head to move around the disk. 
+Data is then read or written in #gls("Block")s, which are typically 4 kB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access lead to increased latency due to the need for the head to move around the disk. 
 
 /*
 #figure(
@@ -155,7 +155,7 @@ On the other side, #gls("SSD") use semiconductor-based #gls("NAND") flash memory
   caption: [A schematic of a solid state drive @ssd], 
 ) <ssd-schematic>
 
-Inside of the actual storage, the data is written in flash cells, which are the smallest unit of storage in a #gls("SSD"), where bits in transistors are stored @os[p. 1]. Those are organized in #gls("Page")s with a typical size of 4kb, which then are grouped into #gls("Block")s of 128KB to 256 KB size @os[p. 1-2]. The performance of a #gls("SSD") is influenced by factors such as the type of #gls("NAND") flash type, the efficiency of the internal controller, and the #gls("Wearleveling") of the flash memory @os[p. 1]. 
+Inside of the actual storage, the data is written in flash cells, which are the smallest unit of storage in a #gls("SSD"), where bits in transistors are stored @os[p. 1]. Those are organized in #gls("Page")s with a typical size of 4 kB, which then are grouped into #gls("Block")s of 128 kB to 256 kB size @os[p. 1-2]. The performance of a #gls("SSD") is influenced by factors such as the type of #gls("NAND") flash type, the efficiency of the internal controller, and the #gls("Wearleveling") of the flash memory @os[p. 1]. 
 
 #figure(
   image("../../../assets/ssd2.png", width: 70%),
