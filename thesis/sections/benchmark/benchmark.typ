@@ -448,7 +448,7 @@ The Next() function for the B-Tree is more complex since we need to traverse bot
 
 In the B+-Tree contrary, the Next() function is much simpler since we only need to follow the linked list of leaf nodes. 
 
-In the benchmark we will see if and how much faster this approach is for range queries compared to the B-Tree, or if the theoretical advantage of the B+-Tree for range queries does not translate into a significant performance difference in practice. 
+In the evaluation in @evaluation, we will see how much faster this approach is for range queries compared to the B-Tree, especially as the size of the result set increases. 
 
 === LSM-Tree Implementation
 To implement the existing LSM-Tree implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
