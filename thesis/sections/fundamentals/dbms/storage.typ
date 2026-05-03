@@ -148,7 +148,7 @@ Data is then read or written in #gls("Block")s, which are typically 4KB in size 
 ) <calc-io-comparison>
 */
 
-==== Solid State Drives (SSD)
+==== Solid State Drives (SSD) <ssd_chapter>
 On the other side, #gls("SSD") use semiconductor-based #gls("NAND") flash memory. Because they lack mechanical components, the physical constraints of seek time ($T_(s e e k)$) and rotational latency ($T_(r o t)$) are eliminated. Instead, performance is determined by electrical signal propagation and the efficiency of the internal controller.
 #figure(
   image("../../../assets/ssd.png", width: 70%),

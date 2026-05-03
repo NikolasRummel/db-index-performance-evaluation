@@ -121,7 +121,6 @@ In comparison to B-Trees, the throughput of the LSM-Tree is also more unstable, 
 
 
 Furthermore, the frequency of these performance drops is inversely proportional to the MemTable size. As seen in @t3lsm, the 16MB LSM-Tree produces a much higher frequency of flushes compared to the 32MB and 64MB versions. By increasing the MemTable capacity, the tree can buffer more incoming writes before reaching the capacity threshold that triggers a flush to disk. This realationship could be expressed as $f_"flush" approx frac(v_"write", S_"mem")$ where $f_"flush"$ represents the frequency of the performance drops, $v_"write"$ is the ingestion rate, and $S_"mem"$ is the MemTable size.
-TODO back refenrence 
 Looking at the 16MB and 32MB LSM-Tree, we can see that at some point there are drops in performance dropping down to 100.000-200.000 ops/sec. The reason here are so called "write stalls", which occur when the memtable is full and the LSM-Tree needs to flush the memtable to disk, but the flush process is not yet finished and thus the LSM-Tree cannot accept new writes until the flush is finished @pebble_readme. To mitigate this problem, the throughput is being reduced, which is why we see in @t3lsm the drops in performance. The 64MB LSM-Tree does not have these drops in performance, since it has a larger memtable size and thus can buffer more writes before reaching the capacity threshold that triggers a flush to disk.
 
 == Results and analysis of mixed workloads (T4 and T5)

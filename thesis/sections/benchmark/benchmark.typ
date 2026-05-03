@@ -206,7 +206,7 @@ Now that we have a simple `Buffer Manager` implemented, we can use it for the im
 == Index implementations
 In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for a easy comparison of the different index structures under the same workloads and conditions. The interface will include normal #gls("CRUD") operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
 #figure(
-  caption: "TODO Ein Stück Quellcode",
+  caption: "Index Interface for all index implementations",
   sourcecode[```go
     type Index interface {
         Insert(key int64, value []byte) error
@@ -448,7 +448,7 @@ The Next() function for the B-Tree is more complex since we need to traverse bot
 
 In the B+-Tree contrary, the Next() function is much simpler since we only need to follow the linked list of leaf nodes. 
 
-In the benchmark we will see how much faster this approach is for range queries compared to the B-Tree, especially as the size of the result set increases. TODO: forward ref 
+In the benchmark we will see if and how much faster this approach is for range queries compared to the B-Tree, or if the theoretical advantage of the B+-Tree for range queries does not translate into a significant performance difference in practice. 
 
 === LSM-Tree Implementation
 To implement the existing LSM-Tree implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
@@ -456,7 +456,7 @@ To implement the existing LSM-Tree implementation, the Pebble library will be in
 To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface. The `Open()` function will be responsible for initializing the Pebble DB with the appropriate options, such as the memory size for the memtable and disabling the write-ahead log (WAL) to ensure a fair comparison with the B-Tree and B+-Tree implementations, which also do not use a WAL.
 
 #figure(
-  caption: "TODO Ein Quellcode",
+  caption: "Creation of the LSM-Tree struct and Open() function to initialize the Pebble DB.",
   sourcecode[```go
     type LSM struct {
       db *pebble.DB
@@ -481,7 +481,7 @@ To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble D
 Now to implement all CRUD operations, we can use the corresponding Pebble functions. For example, to implement the `Insert()` function, we can use the `Set()` function of the Pebble DB:
 
 #figure(
-  caption: "TODO Ein Stück Quellcode",
+  caption: "Simple implementation of the Insert() function for the LSM-Tree using Pebble.",
   sourcecode[```go
 func (l *LSM) Insert(key int64, value []byte) error {
 	return l.db.Set(encodeKey(key), value, pebble.NoSync)
