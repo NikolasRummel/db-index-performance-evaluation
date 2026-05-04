@@ -67,7 +67,7 @@ The data in @t1boxplot shows that B+-Trees are faster then normal B-Trees. Compa
 )<t1throughput>
 
 === LSM-Tree performance
-As seen both in @t1boxplot and @t1throughput, the LSM-Tree are slower compared to the B-Trees. Also the LSM-Tree is optimizised since with it being Pebble, it is a mature implementation with many optimizations, whereas the B-Trees are simple implementations with potential for further optimizations. The main issue with LSM-Trees is that as shown in @lsm_oneil, a lookup must search within multiple components, which is not fast compared to the B-Trees.
+As seen both in @t1boxplot and @t1throughput, the LSM-Tree are slower compared to the B-Trees. Also the LSM-Tree is optimizised since with it being `Pebble`, it is a mature implementation with many optimizations, whereas the B-Trees are simple implementations with potential for further optimizations. The main issue with LSM-Trees is that as shown in @lsm_oneil, a lookup must search within multiple components, which is not fast compared to the B-Trees.
 
 == Results and analysis of T2
 Here, each index is inserted with 5 million records. Then, range queries of different sizes are executed, starting with a range size of 4.000 and doubling the range size until reaching 5 million. In the following, the results will be discussed for the different index types and afterwards, the impact of different page sizes for B-Trees will be analyzed.
@@ -101,7 +101,7 @@ Here we see that bigger page sizes result in better performance for range querie
   caption: [Structural Comparison of B-Tree configurations for 5M records],
 ) <btree-stats>
 
-Since now the configurations with bigger pages, during the range scan, the buffer manager needs to fetch less leaf pages, which results in better performance we see in @t2rangeb. This is one reason why for instance 'InnoDB' uses 16 kB pages by default, as we saw in @bplus_practice. 
+Since now the configurations with bigger pages, during the range scan, the buffer manager needs to fetch less leaf pages, which results in better performance we see in @t2rangeb. This is one reason why for instance `InnoDB` uses 16 kB pages by default, as we saw in @bplus_practice. 
 
 == Results and analysis of T3
 For T3, 5 million records where continuously inserted into each index, while the throughput was measured. The results are shown in the following chart. 
@@ -134,7 +134,7 @@ In the read-heavy scenario (95% reads, 5% writes), the primary goal is to mainta
   image(width: 100%, "../../assets/results/t4.png") 
 )<t4summary>
 
-While the B+-Trees maintains the lowest read response time like we already saw in @b-plus-vs-btree, their write performance is volatile. The median write response time is actually not much higher than the reads, however, the 95th percentile is especially for the B+-Tree (4 kB) higher. In the worst case, it will be even higher. In contrast, Pebble exhibits much more stable results within each setup. During this test, it did not matter how big the memtable was. As espected, the LSM-Tree has a much higher (2x) read response time compared to the B+-Trees, since for each read, it needs to search within multiple components, which is not as fast like in the B-Trees. 
+While the B+-Trees maintains the lowest read response time like we already saw in @b-plus-vs-btree, their write performance is volatile. The median write response time is actually not much higher than the reads, however, the 95th percentile is especially for the B+-Tree (4 kB) higher. In the worst case, it will be even higher. In contrast, `Pebble` exhibits much more stable results within each setup. During this test, it did not matter how big the memtable was. As espected, the LSM-Tree has a much higher (2x) read response time compared to the B+-Trees, since for each read, it needs to search within multiple components, which is not as fast like in the B-Trees. 
 
 Since this workload is mostly reads, the B+-Tree is the best choice for this scenario, as it provides the best read performance while still maintaining reasonable write performance.
 

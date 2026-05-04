@@ -74,7 +74,7 @@ The choice of storage media directly impacts the performance, durability, and co
   })
 ) <memory-pyramid>
 
-So one might think that the best choice would be to use the fastest storage media available, but this is not the case. The amout of registers, caches (and the main memory) is very limited and expensive and not big enough for a typical database usecase @elmasri2016[p. 542]. Moreover, the data is volatile, meaning after some power outage or system crash, the data would be lost @elmasri2016[p. 542], what is not want for a database. Therefore, there is a need to use persistent storage media like a #gls("HDD") and nowadays especially #gls("SSD")s.  
+So one might think that the best choice would be to use the fastest storage media available, but this is not the case. The amount of registers, caches (and the main memory) is very limited and expensive and not big enough for a typical database use case @elmasri2016[p. 542]. Moreover, the data is volatile, meaning after some power outage or system crash, the data would be lost @elmasri2016[p. 542], which is not desired for a database. Therefore, there is a need to use persistent storage media like a #gls("HDD") and nowadays especially #gls("SSD")s.  
 
 In the following, the characteristics of these storage media will be described to further understand indexes and their implementation in a #gls("DBMS"). 
 
@@ -87,7 +87,7 @@ A #gls("HDD") has multiple discs which hold data and a read/write head that move
   caption: [A schematic of a hard disk drive],
 ) <hdd-schematic>
 
-On each of these discs, data is organized in concentric circles called tracks, which are further divided into #gls("Sector")s. A #gls("Sector") is the smallest addressable unit on the physical disk, traditionally 512 bytes or 4 KB in size @elmasri2016[p. 549]. 
+On each of these discs, data is organized in concentric circles called tracks, which are further divided into #gls("Sector")s. A #gls("Sector") is the smallest addressable unit on the physical disk, traditionally 512 bytes or 4 kB in size @elmasri2016[p. 549]. 
 
 The read/write head moves to the appropriate track and #gls("Sector") to access data.
 The performance of a #gls("HDD") is influenced by factors such as seek time (the time it takes for the head to move to the correct track), rotational latency (the time it takes for the desired #gls("Sector") to rotate under the head), and transfer rate (the speed at which data can be read or written once the head is in position) @elmasri2016[p. 547]. In total, the access time can be calculated as follows:
@@ -95,57 +95,10 @@ $$
 $ T_(a c c e s s) = T_(s e e k) + T_(r o t) + T_(t r a n s f e r) $
 $$
 
-Data is then read or written in #gls("Block")s, which are typically 4 kB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access lead to increased latency due to the need for the head to move around the disk. 
+Data is then read or written in #gls("Block")s, which are typically 4 kB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access leads to increased latency due to the need for the head to move around the disk. 
 
 /*
-#figure(
-  block(
-    fill: luma(250),
-    inset: 15pt,
-    radius: 4pt,
-    stroke: 0.5pt + luma(200),
-    width: 100%,
-    [
-      #set text(size: 9pt)
-      #align(left)[
-        *Example Calculation: Impact of Access Patterns on I/O Performance* \
-        To quantify the impact of mechanical latency, consider a drive with an average seek time $T_(s e e k) = 10"ms"$ and rotational latency $T_(r o t) = 4"ms"$. The time required to retrieve $n=100$ non-contiguous vs. contiguous #gls("Block")s is:
-
-        1. *Random Access:*
-           $ t_(r a n d) = n dot (T_(s e e k) + T_(r o t)) = 100 dot (10"ms" + 4"ms") = bold(1.4"s") $
-
-        2. *Sequential Access:*
-           $ t_(s e q) = T_(s e e k) + T_(r o t) + (n dot T_(t r a n s f e r)) approx bold(0.02"s") $
-      ]
-
-      #v(1em) // Add some vertical space before the chart
-
-      // --- Performance Visualization ---
-      #cetz.canvas(length: 1cm, {
-        import cetz.draw: *
-        
-        let b_height = 0.6
-        
-        // Random Bar (Tiny)
-        rect((0, 1.2), (0.1, 1.2 + b_height), fill: red.lighten(80%), name: "rand")
-        content("rand.west", [Random], anchor: "east", padding: .2, size: 8pt)
-        content("rand.east", [ ~150 Operations Per Second], anchor: "west", size: 7pt)
-        
-        // Sequential Bar (Large)
-        rect((0, 0.2), (5, 0.2 + b_height), fill: green.lighten(80%), name: "seq")
-        content("seq.west", [Sequential], anchor: "east", padding: .2, size: 8pt)
-        content("seq.east", [ ~10.000+ Operations Per Second], anchor: "west", size: 7pt)
-        
-        // X-Axis
-        line((0, 0), (6, 0), mark: (end: "stealth", scale: 0.5))
-        content((3, -0.3), [Throughput / Operations per Second], size: 7pt, fill: gray.darken(30%))
-      })
-    ]
-  ),
-  caption: [Comparison of I/O Performance Between Random and Sequential Access Patterns TODO: fix numbers.],
-  kind: "calculation",
-  supplement: [Calculation]
-) <calc-io-comparison>
+... (rest of commented block)
 */
 
 ==== Solid State Drives (SSD) <ssd_chapter>
@@ -166,20 +119,20 @@ To now read a physical #gls("Page"), we have a constant access time even though 
 However, #gls("SSD", plural:true) also provide better performance for sequential writes compared to random ones and therefore are very suitable for write throughput @kleppmann[p. 79]. This is because sequential patterns allow the internal controller to utilize parallel #gls("NAND") channels and minimize the overhead of #gls("gc") and #gls("writeamplification"). 
 
 ==== Buffer Management 
-In order to speed up data acces, the goal of a #gls("DBMS") is to keep as much data as possible in main memory, since access to main memory is much faster than access to secondary storage (see @memory-pyramid).
+In order to speed up data access, the goal of a #gls("DBMS") is to keep as much data as possible in main memory, since access to main memory is much faster than access to secondary storage (see @memory-pyramid).
 
-The `Buffer Manager` is responsible for smartly managing the most important data in the main memory to speed up query performance. In a #gls("DBMS"), the `Buffer Manager` holds a pool of database #gls("Page")s in main memory, which are used to cache data from disk @elmasri2016[p. 557]. These logical database #gls("Page")s serve as the atomic unit of transfer between software and storage, abstracting the underlying hardware specifics we saw in @physical_storage. Since main memory is limited, the `Buffer Manager` must decide which database #gls("Page") to keep and which to evict when new data is required. This is achieved through buffer replacement policies, which determine eviction based on factors such as recency of access, frequency of use, and the specific cost of reloading a #gls("Page") from the underlying physical storage @elmasri2016[p. 559]
+The `Buffer Manager` is responsible for effectively managing the most important data in main memory to speed up query performance. In a #gls("DBMS"), the `Buffer Manager` holds a pool of database #gls("Page")s in main memory, which are used to cache data from disk @elmasri2016[p. 557]. These logical database #gls("Page")s serve as the atomic unit of transfer between software and storage, abstracting the underlying hardware specifics we saw in @physical_storage. Since main memory is limited, the `Buffer Manager` must decide which database #gls("Page") to keep and which to evict when new data is required. This is achieved through buffer replacement policies, which determine eviction based on factors such as recency of access, frequency of use, and the specific cost of reloading a #gls("Page") from the underlying physical storage @elmasri2016[p. 559].
 
 Common buffer replacement policies include:
 - *#gls("LRU")*: Evicts the #gls("Page") that has not been accessed for the longest time.
-- *#gls("MRU")*: Evicts the #gls("Page") that was accessed most recently
+- *#gls("MRU")*: Evicts the #gls("Page") that was accessed most recently.
 - *#gls("FIFO")*: Evicts the #gls("Page") that has been in the buffer pool the longest.
 - *Clock*: Evicts the #gls("Page") that has been accessed least recently, but uses a circular buffer and a "use" bit to track #gls("Page") usage.
 
 In addition to these policies, in practice, many #gls("DBMS") implement more sophisticated algorithms that take into account the specific workload and access patterns to optimize performance. However, for the purpose of this thesis, we will focus on the most common ones.
 
 ==== Data Organization: The Slotted Page Model
-As previously mentioned, the #gls("DBMS") interacts with the storage layer in fixed-size database #gls("Page")s. However, the data stored within these #gls("Page")s, such as database rows or index entries, often has a variable size. Names for instance don't have the same length, and to not waste space, the #gls("DBMS") needs to be able to manage variable-length records within a fixed-size #gls("Page").
+As previously mentioned, the #gls("DBMS") interacts with the storage layer in fixed-size database #gls("Page")s. However, the data stored within these #gls("Page")s, such as database rows or index entries, often has a variable size. Names, for instance, do not have the same length, and to not waste space, the #gls("DBMS") needs to be able to manage variable-length records within a fixed-size #gls("Page").
 
 To manage this efficiently, the Slotted Page Model is used @silberschatz2020database[pp. 592-594].
 In this model, a #gls("Page") is divided into three main sections:
@@ -197,12 +150,12 @@ In this model, a #gls("Page") is divided into three main sections:
       rect(width: 100%)[Free Space / Records (Slotted Data)]
     )
   ],
-  caption: [The Slotted Page Architecture used for internal Page organization.],
+  caption: [The slotted page architecture used for internal page organization.],
 ) <fig-slotted-page>
 
-This architecture is essential for efficiently managing variable-length records within fixed-size #gls("Page")s, allowing the #gls("DBMS") to optimize storage utilization and access patterns while maintaining the necessary metadata for record management. 
+This architecture is essential for effectively managing variable-length records within fixed-size #gls("Page")s, allowing the #gls("DBMS") to optimize storage utilization and access patterns while maintaining the necessary metadata for record management. 
 
 === Summary
 Understanding both the physical limitations of storage media and the logical mechanisms of storage management is fundamental to database design. While the `Buffer Manager` attempts to mask disk latency by caching data, the underlying organization of data into #gls("Page")s remains a critical factor in performance. 
 
-In the following chapter, we will build upon these concepts to explore how index structures utilize this #gls("Page")-based storage management to provide logarithmic search performance, what makes it much more efficient then full-table scans.
+In the following chapter, we will build upon these concepts to explore how index structures utilize this #gls("Page")-based storage management to provide logarithmic search performance, which makes it much more efficient than full-table scans.

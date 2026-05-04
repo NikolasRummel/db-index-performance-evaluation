@@ -10,7 +10,7 @@
   ]
 ]
 
-To understand index structures and their implementation in a #gls("DBMS"), one must first understand the basic components and architecture of a #gls("DBMS"). A #gls("DBMS") is not just a simple program, but rather a complex system that consists of several components that work together to manage and manipulate data efficiently. While the definition by Elmasri and Navathe provides an rough idea of the functional requirements in a #gls("DBMS"), its architecture consists of multiple components to fulfill those. In the following, a rough description of the main components showed in @dbms_fig will be given.
+To understand index structures and their implementation in a #gls("DBMS"), one must first understand the basic components and architecture of a #gls("DBMS"). A #gls("DBMS") is not just a simple program, but rather a complex system that consists of several components that work together to manage and manipulate data efficiently. While the definition by Elmasri and Navathe provides a rough idea of the functional requirements in a #gls("DBMS"), its architecture consists of multiple components to fulfill those. In the following, a rough description of the main components shown in @dbms_fig will be given.
 
 #figure(
   image("../../../assets/dbms.png", width: 100%),

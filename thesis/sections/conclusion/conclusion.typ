@@ -5,7 +5,7 @@ This thesis provided a comparison of B-Trees, B+-Trees, and LSM-Trees in form of
 The implementation of the B-Tree and B+-Tree was done from scratch, while for the LSM-Tree, the Pebble library was used. The benchmarks were designed to evaluate the performance of each index structure under different workloads. As theoretically expected, the B+-Tree outperformed the standard B-Tree in range query scenarios, while the LSM-Tree performed best in write-heavy workloads. The results clearly demonstrate the architectural differences between the structures and therefore the importance on choosing the right index structure or in general the right #gls("DBMS") for the right use case.
 
 == Answering the Research Questions
-Based on the analysis in Chapter @evaluation, the research questions formulated in Section @research_questions can be answered as follows:
+Based on the analysis in Chapter @evaluation, the research questions formulated in @research_questions can be answered as follows:
 
 *RQ1: How do B-Trees, B+-Trees, and LSM-Trees compare in terms of query speed?*
 B+-Trees offer the highest random lookup speed due to their optimized tree height. Standard B-Trees are slower because internal nodes store values, leading to a deeper structure. LSM-Trees are the slowest for point queries, as a lookup may require searching across multiple levels and components. For range queries, B+-Trees significantly outperform B-Trees due to their linked leaf nodes, which allow for efficient linear traversal. On the other side, LSM-Trees perform very good for write-intensive workloads, resulting in much higher write throughput than B-Trees, but reads are much slower as the tradeoff.
