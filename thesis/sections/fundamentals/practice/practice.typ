@@ -1,5 +1,5 @@
 
-#import "@preview/clean-dhbw:0.4.0": *
+#import "@preview/clean-dhbw:0.5.0": *
 
 == Practical Relevance and Industrial Application <practice>
 

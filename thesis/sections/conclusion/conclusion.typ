@@ -1,4 +1,4 @@
-#import "@preview/clean-dhbw:0.4.0": gls
+#import "@preview/clean-dhbw:0.5.0": gls
 
 = Conclusion <conclusion>
 This thesis provided a comparison of B-Trees, B+-Trees, and LSM-Trees in form of empirical benchmarks. After looking at some theoretical properties of all three index structures, a concept on how to implement and benchmark them was developed. 

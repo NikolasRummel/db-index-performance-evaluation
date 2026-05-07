@@ -1,4 +1,4 @@
-#import "@preview/clean-dhbw:0.4.0": *
+#import "@preview/clean-dhbw:0.5.0": *
 #import "glossary.typ": glossary-entries, acrolist-entries
 
 #register-glossary(acrolist-entries)
@@ -28,6 +28,37 @@
     = Acronyms
  
     #print-glossary(acrolist-entries)
+  = AI Acknowledgement 
+    The following table provides a transparent documentation of the artificial intelligence tools used during the creation of this thesis, in accordance with the guidelines for scientific work.
+
+    #table(
+      columns: (1fr, 3fr),
+      inset: 10pt,
+      stroke: 0.5pt + gray,
+      fill: (column, row) => if row == 0 { luma(240) },
+      align: (left, left),
+      [*Tool*], [*Description of Use*],
+      
+      [Gemini (Web)], [
+        - Understanding of basic concepts if questions arose during the research phase.
+      ],
+      
+      [Gemini CLI], [
+        - Assistance with code implementation and especially in debugging and optimizing the B-Tree and B+-Tree implementations.
+        - Searching for grammar and spelling mistakes in thesis.
+      ],
+
+      [Claude (Web)], [
+        - Helping to create the images for the thesis in typst with cetz, especially the B-Tree and B+-Tree images in @index.
+      ],
+      
+      [NotebookLM], [
+        - Summarization of topics in different sources, especially the original papers on B-Trees, B+-Trees and LSM-Trees, to get a better understanding of the concepts and to find relevant information for the thesis.
+      ], 
+    )
+    
+    #v(1em)
+    I hereby declare that all AI-generated content was verified for factual accuracy and manually refined. No content was adopted without critical review.
   ]
 )
 #include "sections/introduction/introduction.typ"

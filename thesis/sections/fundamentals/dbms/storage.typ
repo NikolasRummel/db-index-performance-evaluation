@@ -1,4 +1,4 @@
-#import "@preview/clean-dhbw:0.4.0": gls
+#import "@preview/clean-dhbw:0.5.0": gls
 
 #import "@preview/cetz:0.4.2"
 

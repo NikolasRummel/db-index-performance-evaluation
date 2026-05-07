@@ -1,4 +1,4 @@
-#import "@preview/clean-dhbw:0.4.0": *
+#import "@preview/clean-dhbw:0.5.0": *
 #import "@preview/cetz:0.4.2"
 
 = Design and Implementation <design>
