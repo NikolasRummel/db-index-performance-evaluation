@@ -19,7 +19,7 @@ RQ1: How do B-Trees, B+-Trees, and LSM-Trees compare in terms of query speed?
 
 RQ2: How significant is the performance gap between B-Trees and B+-Trees during range queries?
 
-RQ3: Which index structure should you choose for a write- or read-heavy workload, considering factors like read/write ratio and data size?
+RQ3: Which index structure should you choose for a write- or read-heavy workload?
 
 == Structure of the Thesis
 The thesis is structured in 5 main chapters. At first, an overview of #gls("DBMS") will be given, especially on how the storage management works. Secondly, in @index, the fundamentals of database index structures will be explained. In @design the actual implementation of index structures and the benchmark will be described. @evaluation will present the evaluation results and analyze them in detail and finally, in @conclusion, a summary of the findings will be given and an outlook on potential future work will be presented in @outlook.

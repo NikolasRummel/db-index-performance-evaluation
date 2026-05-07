@@ -101,7 +101,7 @@ The benchmark will consist of mainly two components. The `benchmark` package wil
 The `benchmark` package will be responsible for implementing all tests and their execution. The `Benchmark Runner` will be responsible for executing the tests and collecting the results, while the `Dataset Generator` will be responsible for generating the dataset that will be used for the tests. The `Result Plotter` will be responsible for creating the visualizations of the results in form of graphs and charts.
 
 === Package `dbms`
-The `dbms` package will be responsible for implementing the index structures and the `Buffer Manager`. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple LRU cache for optimizing these operations. The B-Tree, B+-Tree and LSM-Tree components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
+The `dbms` package will be responsible for implementing the index structures and the `Buffer Manager`. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple #gls("LRU") cache for optimizing these operations. The B-Tree, B+-Tree and LSM-Tree components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
 
 Since only the B-Tree and B+-Tree will be implemented from scratch, the LSM-Tree component will be a wrapper and not use our `Buffer Manager` .
 
@@ -232,7 +232,10 @@ Since both the B-Tree and the B+-Tree have a lot of similarities in their implem
 
 To implement this generically, the strategy pattern @strategy will be used where each B-Tree implements its specific logic (strategy) for operations like the range query. In a normal B-Tree, the range query would need to traverse both internal and leaf nodes, while in a B+-Tree, the range query would only need to traverse the linked leaf nodes. By using the strategy pattern, we can implement the common logic for both index structures in the generic tree implementation and then implement the specific logic for each index structure in their respective implementations.
 
-#figure(caption: "Strategy pattern for tree implementations", image(width: 70%, "../../assets/tree_strategy.svg"))
+#figure(
+  image("../../assets/strategy.png"),
+  caption: [Strategy pattern for tree implementations],
+)
 
 Here, the `NodeAccessor` interface defines the common operations which are different in the specific tree implementations. 
 
