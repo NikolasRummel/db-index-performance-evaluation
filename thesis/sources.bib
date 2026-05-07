@@ -50,12 +50,12 @@ doi = {10.1145/1787275.1787282}
 }
 
 
-@misc{statista_socialnetworks,
+@online{statista_socialnetworks,
 	author = {Statista},
 	title = {Ranking der größten Social Networks und Messenger nach der Anzahl der Nutzer im Oktober 2025},
-	howpublished = {\url{https://de.statista.com/statistik/daten/studie/181086/umfrage/die-weltweit-groessten-social-networks-nach-anzahl-der-user/}},
+	url = {https://de.statista.com/statistik/daten/studie/181086/umfrage/die-weltweit-groessten-social-networks-nach-anzahl-der-user/},
 	year = {2025},
-	note = {Viewed at: 30. april 2026}
+	urldate = {2026-04-30}
 }
 
 @article{btree_original,
@@ -172,63 +172,63 @@ doi = {10.1145/1787275.1787282}
   urldate = {2026-03-09},
 }
 
-@misc{sqlite_most_deployed,
+@online{sqlite_most_deployed,
   author       = {{SQLite Documentation}},
   title        = {Most Widely Deployed and Used Database Engine},
-  howpublished = {\url{https://www.sqlite.org/mostdeployed.html}},
+  url          = {https://www.sqlite.org/mostdeployed.html},
   year         = {2026},
-  note         = {Accessed: 2026-03-17}
+  urldate      = {2026-03-17}
 }
 
-@misc{sqlite_general,
+@online{sqlite_general,
   author       = {{SQLite Documentation}},
   title        = {SQLite Documentation},
-  howpublished = {\url{https://www.sqlite.org/index.html}},
+  url          = {https://www.sqlite.org/index.html},
   year         = {2026},
-  note         = {Accessed: 2026-03-17}
+  urldate      = {2026-03-17}
 }
 
-@misc{sqlite_fileformat,
+@online{sqlite_fileformat,
   author       = {{SQLite Documentation}},
   title        = {Database File Format},
-  howpublished = {\url{https://www.sqlite.org/fileformat.html}},
+  url          = {https://www.sqlite.org/fileformat.html},
   year         = {2026},
-  note         = {Accessed: 2026-03-17}
+  urldate      = {2026-03-17}
 }
-@misc{postgres_btree_readme,
+@online{postgres_btree_readme,
   author       = {{PostgreSQL Documentation}},
   title        = {B-tree Indexes - README},
-  howpublished = {\url{https://github.com/postgres/postgres/blob/master/src/backend/access/nbtree/README}},
+  url          = {https://github.com/postgres/postgres/blob/master/src/backend/access/nbtree/README},
   year         = {2026},
-  note         = {Accessed: 2026-03-17}
+  urldate      = {2026-03-17}
 }
 
-@misc{postgres_btree,
+@online{postgres_btree,
   author       = {{PostgreSQL Documentation}},
   title        = {B-tree Indexes},
-  howpublished = {\url{https://www.postgresql.org/docs/current/btree.html}},
+  url          = {https://www.postgresql.org/docs/current/btree.html},
   year         = {2026},
-  note         = {Accessed: 2026-03-17}
+  urldate      = {2026-03-17}
 }
 
 @article{postgres_btree_paper,
-author = {Lehman, Philip L. and Yao, s. Bing},
-title = {Efficient locking for concurrent operations on B-trees},
-year = {1981},
-issue_date = {Dec. 1981},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-volume = {6},
-number = {4},
-issn = {0362-5915},
-url = {https://doi.org/10.1145/319628.319663},
-doi = {10.1145/319628.319663},
-abstract = {The B-tree and its variants have been found to be highly useful (both theoretically and in practice) for storing large amounts of information, especially on secondary storage devices. We examine the problem of overcoming the inherent difficulty of concurrent operations on such structures, using a practical storage model. A single additional “link” pointer in each node allows a process to easily recover from tree modifications performed by other concurrent processes. Our solution compares favorably with earlier solutions in that the locking scheme is simpler (no read-locks are used) and only a (small) constant number of nodes are locked by any update process at any given time. An informal correctness proof for our system is given.},
-journal = {ACM Trans. Database Syst.},
-month = dec,
-pages = {650–670},
-numpages = {21},
-keywords = {multiway search trees, locking protocols, index organizations, database, data structures, correctness, consistencey, concurrency controls, concurrenct algorithms, B-tree}
+  author = {Lehman, Philip L. and Yao, s. Bing},
+  title = {Efficient locking for concurrent operations on B-trees},
+  year = {1981},
+  issue_date = {Dec. 1981},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {6},
+  number = {4},
+  issn = {0362-5915},
+  url = {https://doi.org/10.1145/319628.319663},
+  doi = {10.1145/319628.319663},
+  abstract = {The B-tree and its variants have been found to be highly useful (both theoretically and in practice) for storing large amounts of information, especially on secondary storage devices. We examine the problem of overcoming the inherent difficulty of concurrent operations on such structures, using a practical storage model. A single additional “link” pointer in each node allows a process to easily recover from tree modifications performed by other concurrent processes. Our solution compares favorably with earlier solutions in that the locking scheme is simpler (no read-locks are used) and only a (small) constant number of nodes are locked by any update process at any given time. An informal correctness proof for our system is given.},
+  journal = {ACM Trans. Database Syst.},
+  month = dec,
+  pages = {650–670},
+  numpages = {21},
+  keywords = {multiway search trees, locking protocols, index organizations, database, data structures, correctness, consistencey, concurrency controls, concurrenct algorithms, B-tree}
 }
 
 @book{silberschatz2020database,
@@ -282,21 +282,6 @@ keywords = {multiway search trees, locking protocols, index organizations, datab
   url       = {https://doi.org/10.1145/3318464.3386134}
 }
 
-@misc{mongo_wiredtiger,
-  author    = {{MongoDB Documentation}},
-  title     = {WiredTiger Storage Engine},
-  year      = {2026},
-  url       = {https://www.mongodb.com/docs/manual/core/wiredtiger/},
-  urldate   = {2026-03-23}
-}
-
-@misc{cassandra_storage,
-  author    = {{Apache Cassandra Documentation}},
-  title     = {Storage Engine},
-  year      = {2026},
-  url       = {https://cassandra.apache.org/doc/latest/cassandra/architecture/storage_engine.html},
-  urldate   = {2026-03-23}
-}
 
 @online{cockroach_pebble,
   author    = {{Cockroach Labs Documentation}},
