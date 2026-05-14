@@ -152,6 +152,7 @@ func (p *Pager) writePageToDisk(id uint64, pg Page) error {
 	}
 	return nil
 }
+
 func (p *Pager) writePageCount() error {
 	hdr := make(Page, p.PageSize)
 	// Preserve existing header content if the file already has data.

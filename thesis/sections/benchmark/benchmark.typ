@@ -131,35 +131,41 @@ func main() {
 )
 
 
-== Buffer Manager Implementation
+== Buffer Manager Implementation <pager>
 
-The `Pager` component is responsible for managing the I/O operations to the disk. It provides a Read and Write #gls("API") for the upcoming index implementations to read and write pages to the disk. 
-Also, an `Open()` function will be used to initialize a file with a page (Page 0) for storing metadata. This will be used to track the pageCount.
+The `Pager` component is responsible for managing the I/O operations to the disk. It provides a Read and Write #gls("API") for the upcoming index implementations to read and write pages to the disk. In the following, the implementation for write operations will be described, since this is the most important part for the performance of the index structures.
+
 #figure(
-  caption: "Simplified Open() function of the Pager component.",
+  caption: "Datastructure of the Pager component and writePageToDisk function.",
   sourcecode[```go
-func Open(path string, cachePages int, pageSize uint32) (*Pager, error) {
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
+type Pager struct {
+	file         *os.File
+	cache        *lruCache
+	pageCount    uint64 // total number of pages ever allocated
+	PageSize     uint32 // size of each page in bytes
+	writeCount   int    // count of writes since last sync
+	SyncInterval int    // sync to disk every n writes. 0 means no sync, 1 means sync always.
+}
 
-	p := &Pager{
-		file:     f,
-		cache:    newLRUCache(cachePages),
-		PageSize: pageSize,
+
+func (p *Pager) writePageToDisk(id uint64, pg Page) error {
+	_, err := p.file.WriteAt(pg, p.offset(id))
+	if err != nil {
+		return fmt.Errorf("pager: write page %d: %w", id, err)
 	}
 
-	exists, err := p.fileExists()
-
-	if exists {
-		p.readPageCount()
-	} else {
-		p.pageCount = 1
-		p.writePageCount()
+	if p.SyncInterval > 0 {
+		p.writeCount++
+		if p.writeCount%p.SyncInterval == 0 {
+			return p.file.Sync()
+		}
 	}
-
-	return p, nil
+	return nil
 }
 ```],
 )
+
+The `writePageToDisk` function writes a single page to its fixed position in the file using `WriteAt`, which performs a non-sequential write directly at the computed byte offset. The most crucial part for the write performance in this thesis is the `SyncInterval` field, which controls the durability behaviour of a written page. A value of `0` disables explicit synchronisation entirely, relying on the OS page cache to eventually flush pages and therefore  maximising throughput at the cost of durability. In case of a system crash, the buffered pages may be lost with this setup. A value of `1` issues an `fsync` syscall after every single write to have data durability. Values greater than `1` then means, that every `n` writes, the file is synchronised to disk, which provides a good balance between performance and durability. This allows for a much higher write throughput, since the `fsync` syscall is very expensive and can significantly degrade performance if called after every write. 
 
 The pager also implements a cache to optimize the read and write operations. For this, we use a doubly linked list of pages which is used to implement a simple LRU cache. When a page is read from the disk, it is added to the front of the list and when a page is written to the disk, it is also added to the front of the list. If the cache is full, the least recently used page (the one at the end of the list) is evicted from the cache and written to the disk if it has been modified.
 

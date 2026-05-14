@@ -47,6 +47,8 @@ As configuration of the benchmark, the following index parameters were used:
 
 For B-Trees, the cache is configured to hold 4096 pages, so 4 kB pages result in a cache size of 16 MB, 8 kB pages result in a cache size of 32 MB, and 16 kB pages result in a cache size of 64 MB. This allows for a fair comparison between the B-Tree and LSM-Tree configurations, as they have the same size of in-memory data. 
 
+As mentioned in the buffer manager implementation in @pager, the `Pager` component has a `SyncInterval` parameter, which determines how often the pager will sync to disk. For the benchmarks, this parameter is set to `500`, which means that the pager will sync to disk every `500` writes. This may be a good compromise between performance and durability, as it allows for a higher write throughput while still ensuring that most data is not lost in case of a crash. However, depending on the use case, a different `SyncInterval` may be more appropriate. 
+
 == Results and Analysis of Test 1
 
 For T1 5 million records were first inserted sequentially to populate each index. Subsequently, a workload of 2 million random point queries was executed. This is enough to fill the cache and memtable of each index, mimicking a realistic workload. The results of this test are shown in the following charts, where the first chart shows a boxplot of response times and the second chart shows the throughput in queries per second.
@@ -107,21 +109,23 @@ Since now the configurations with bigger pages, during the range scan, the buffe
 For T3, 5 million records where continuously inserted into each index, while the throughput was measured. The results are shown in the following chart. 
 #figure(
   caption: [T3: Write Throughput performance of all index types],
-  image(width: 100%, "../../assets/results/t3.png")
+  image(width: 100%, "../../assets/results/t3new.png")
 )<t3>
 
-As expected, the LSM-Tree outperforms the B-Trees by a factor of roughly 3. In the beginning, all LSM-Trees are even faster, since the memtable is not yet full and thus all writes are done in-memory, which is very fast. As the memtable fills up, the performance of the LSM-Tree decreases, but it still outperforms the B-Trees. The B-Trees have a much lower write throughput, since for each insert, the tree needs to be updated on disk, which requires multiple page fetches and writes for each insert. This is especially problematic for random inserts, which require more page fetches and writes due to the need to maintain the tree structure.
+As expected, the LSM-Tree outperforms the B-Trees by a factor of 22 to 55. In the beginning, all LSM-Trees are 55 times faster then the B-Trees, since the memtable is not yet full and thus all writes are done in-memory, which is very fast. As the memtable fills up, the performance of the LSM-Tree decreases, but it still outperforms the B-Trees. 
+The lower write throughput of B-Trees comes from mainly two factors. First, random key distribution causes each insert to target an unpredictable leaf page, resulting in random I/O patterns, as successive writes target different locations on disk. Second, the explicit `fsync` call every `SyncInterval` writes forces the operating system to flush all dirty pages to disk synchronously, blocking the insert path until the storage confirms the write. The LSM-Tree is affected only by the second factor during memtable flushes, which occur far less frequently and are decoupled from the insert path entirely since writes to the memtable return immediately without waiting for any disk confirmation.
 
 In comparison to B-Trees, the throughput of the LSM-Tree is also more unstable, since we write on the memtable until it is full, which results in a sudden drop in performance. After the memtable is full, the LSM-Tree needs to flush the memtable to disk and merge it with the on-disk components, which also results in a drop in performance. This pattern is repeated throughout the test, which results in the unstable performance of the LSM-Tree we see in @t3lsm.
 
 #figure(
   caption: [T3: Performance of LSM-Trees during the test],
-  image(width: 100%, "../../assets/results/t3lsm.png")
+  image(width: 100%, "../../assets/results/t3lsmnew.png")
 )<t3lsm>
 
 
-Furthermore, the frequency of these performance drops is inversely proportional to the MemTable size. As seen in @t3lsm, the LSM-Tree (16 MB) produces a much higher frequency of flushes compared to the LSM-Tree (32 MB) and LSM-Tree (64 MB) versions. By increasing the MemTable capacity, the tree can buffer more incoming writes before reaching the capacity threshold that triggers a flush to disk. This realationship could be expressed as $f_"flush" approx frac(v_"write", S_"mem")$ where $f_"flush"$ represents the frequency of the performance drops, $v_"write"$ is the ingestion rate, and $S_"mem"$ is the MemTable size. This relationship reflects the theoretical rolling merge process described in @lsm_oneil. 
-Looking at the LSM-Tree (16 MB) and LSM-Tree (32 MB), we can see that at some point there are drops in performance dropping down to 100.000-200.000 ops/sec. The reason here are so called "write stalls", which occur when the memtable is full and the LSM-Tree needs to flush the memtable to disk, but the flush process is not yet finished and thus the LSM-Tree cannot accept new writes until the flush is finished @pebble_readme. To mitigate this problem, the throughput is being reduced, which is why we see in @t3lsm the drops in performance. The LSM-Tree (64 MB) does not have these drops in performance, since it has a larger memtable size and thus can buffer more writes before reaching the capacity threshold that triggers a flush to disk.
+Furthermore, the frequency of these performance drops is inversely proportional to the memtable size. As seen in @t3lsm, the LSM-Tree (16 MB) produces a much higher frequency of flushes compared to the LSM-Tree (32 MB) and LSM-Tree (64 MB) versions. By increasing the memtable capacity, the tree can buffer more incoming writes before reaching the capacity threshold that triggers a flush to disk. This realationship could be expressed as $f_"flush" approx frac(v_"write", S_"mem")$ where $f_"flush"$ represents the frequency of the performance drops, $v_"write"$ is the ingestion rate, and $S_"mem"$ is the MemTable size. This relationship reflects the theoretical rolling merge process described in @lsm_oneil. 
+
+Looking at the LSM-Tree (16 MB) and LSM-Tree (32 MB), we can see that at some point there are drops in performance dropping down to 200.000 ops/sec. The reason here are so called "write stalls", which occur when the memtable is full and the LSM-Tree needs to flush the memtable to disk, but the flush process is not yet finished and thus the LSM-Tree cannot accept new writes until the flush is finished @pebble_readme. To mitigate this problem, the throughput is being reduced, which is why we see in @t3lsm the drops in performance. The LSM-Tree (64 MB) also experiences these drops, however less frequently, since it has a larger memtable and can therefore buffer more writes before reaching the capacity threshold that triggers a flush to disk. As the dataset grows, compaction pressure increases across all variants, which is reflected in the general downward trend in throughput over time.
 
 == Results and analysis of mixed workloads (T4 and T5)
 For T4 and T5, each index is initially filled with 5 million records. Then, a loop with 1 million iterations is executed, where in each iteration, either a random point query or a random insert is performed. 
