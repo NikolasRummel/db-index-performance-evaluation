@@ -37,6 +37,11 @@ var t1Header = []string{
 }
 
 func fillIndex(idx index.Index, ds Dataset) error {
+	// Disable sync for initial fill to speed up preparation.
+	if s, ok := idx.(interface{ SetSyncInterval(int) }); ok {
+		s.SetSyncInterval(0)
+	}
+
 	// Create a slice of indices and sort it based on the keys.
 	// This allows us to insert keys in ascending order, which is much faster
 	// for B-tree and B+ tree structures as it minimizes splits and re-balancing.
@@ -332,6 +337,10 @@ func RunBenchmarkT3(indices []IndexDef, cfg Config) error {
 			continue
 		}
 
+		if s, ok := idx.(interface{ SetSyncInterval(int) }); ok {
+			s.SetSyncInterval(500)
+		}
+
 		windowStart := time.Now()
 		windowOps := 0
 
@@ -426,6 +435,12 @@ func RunMixedWorkload(indices []IndexDef, cfg Config, readPercent int, testLabel
 			}
 			continue
 		}
+
+		// Re-enable sync for the actual benchmark workload.
+		if s, ok := idx.(interface{ SetSyncInterval(int) }); ok {
+			s.SetSyncInterval(500)
+		}
+
 		rng := rand.New(rand.NewSource(cfg.Seed + 2))
 
 		readTimes := make([]int64, 0, cfg.MixedOpsTotal)

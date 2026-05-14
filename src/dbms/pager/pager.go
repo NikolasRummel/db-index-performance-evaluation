@@ -12,10 +12,12 @@ type Page []byte
 
 // Pager manages a file of fixed-size pages, providing caching and allocation.
 type Pager struct {
-	file      *os.File
-	cache     *lruCache
-	pageCount uint64 // total number of pages ever allocated
-	PageSize  uint32 // size of each page in bytes
+	file         *os.File
+	cache        *lruCache
+	pageCount    uint64 // total number of pages ever allocated
+	PageSize     uint32 // size of each page in bytes
+	writeCount   int    // count of writes since last sync
+	SyncInterval int    // sync to disk every n writes. 0 means no sync, 1 means sync always.
 }
 
 // Open opens (or creates) a pager backed by the file at the given path.
@@ -27,9 +29,10 @@ func Open(path string, cachePages int, pageSize uint32) (*Pager, error) {
 	}
 
 	p := &Pager{
-		file:     f,
-		cache:    newLRUCache(cachePages),
-		PageSize: pageSize,
+		file:         f,
+		cache:        newLRUCache(cachePages),
+		PageSize:     pageSize,
+		SyncInterval: 10000,
 	}
 
 	exists, err := p.fileExists()
@@ -114,6 +117,12 @@ func (p *Pager) PageCount() uint64 {
 	return p.pageCount
 }
 
+// SetSyncInterval sets the number of writes after which the pager should sync to disk.
+// 0 means no sync (except on Close), 1 means sync every write.
+func (p *Pager) SetSyncInterval(n int) {
+	p.SyncInterval = n
+}
+
 // --- internal helpers ---
 
 func (p *Pager) offset(id uint64) int64 {
@@ -134,9 +143,15 @@ func (p *Pager) writePageToDisk(id uint64, pg Page) error {
 	if err != nil {
 		return fmt.Errorf("pager: write page %d: %w", id, err)
 	}
+
+	if p.SyncInterval > 0 {
+		p.writeCount++
+		if p.writeCount%p.SyncInterval == 0 {
+			return p.file.Sync()
+		}
+	}
 	return nil
 }
-
 func (p *Pager) writePageCount() error {
 	hdr := make(Page, p.PageSize)
 	// Preserve existing header content if the file already has data.

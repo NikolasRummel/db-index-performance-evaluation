@@ -25,6 +25,10 @@ func runIndexTests(t *testing.T, newIdx func(path string) (index.Index, error), 
 		}
 		defer idx.Close()
 
+		if s, ok := idx.(interface{ SetSyncInterval(int) }); ok {
+			s.SetSyncInterval(0)
+		}
+
 		key := int64(42)
 		val := []byte("hello world")
 
@@ -62,6 +66,10 @@ func runIndexTests(t *testing.T, newIdx func(path string) (index.Index, error), 
 		}
 		defer idx.Close()
 
+		if s, ok := idx.(interface{ SetSyncInterval(int) }); ok {
+			s.SetSyncInterval(0)
+		}
+
 		key := int64(10)
 		v1 := []byte("value 1")
 		v2 := []byte("value 2 (longer)")
@@ -86,6 +94,10 @@ func runIndexTests(t *testing.T, newIdx func(path string) (index.Index, error), 
 			t.Fatal(err)
 		}
 		defer idx.Close()
+
+		if s, ok := idx.(interface{ SetSyncInterval(int) }); ok {
+			s.SetSyncInterval(0)
+		}
 
 		// Insert 10, 20, 30, 40, 50
 		for i := 1; i <= 5; i++ {
@@ -135,6 +147,10 @@ func runIndexTests(t *testing.T, newIdx func(path string) (index.Index, error), 
 			t.Fatal(err)
 		}
 		defer idx.Close()
+
+		if s, ok := idx.(interface{ SetSyncInterval(int) }); ok {
+			s.SetSyncInterval(0)
+		}
 
 		// Insert 500 keys to force multiple splits and tree growth
 		n := 500

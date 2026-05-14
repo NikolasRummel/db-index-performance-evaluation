@@ -12,6 +12,8 @@ go.work.sum
 books/
 src/out
 
+slides-v2
+
 # Go build artifacts
 /src/benchmark
 /src/cmd/benchmark/benchmark

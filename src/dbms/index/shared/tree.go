@@ -44,6 +44,11 @@ type Tree struct {
 	Acc    NodeAccessor
 }
 
+// SetSyncInterval sets the number of writes after which the pager should sync to disk.
+func (t *Tree) SetSyncInterval(n int) {
+	t.Pg.SetSyncInterval(n)
+}
+
 // ─── helpers ───────────────────────────────────
 
 func isLeaf(p pager.Page) bool { return p[btpage.OffType] == btpage.TypeLeaf }
