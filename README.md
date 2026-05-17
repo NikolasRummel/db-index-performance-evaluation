@@ -21,12 +21,18 @@ The project implements and benchmarks three primary indexing strategies:
 
 ## Benchmarks
 
-The benchmark suite evaluates the indices across several dimensions:
+The benchmark suite evaluates the indices across several dimensions and configurations:
 1. **T1: Point Query**: Latency and throughput of single-key lookups.
 2. **T2: Range Query**: Performance of retrieving ranges of various sizes.
 3. **T3: Write Throughput**: Ingestion speed for large datasets.
 4. **T4: Read-Heavy Workload**: Mixed operations with 90% reads.
 5. **T5: Write-Heavy Workload**: Mixed operations with 90% writes.
+
+### Index Variants
+
+To provide a deeper analysis, the suite compares several implementation variants:
+- **B-Tree & B+ Tree**: Tested with different page sizes (**4KB, 8KB, 16KB**) to analyze the impact on I/O.
+- **LSM-Tree**: Tested with varying memtable sizes (**16MB, 32MB, 64MB**) using the Pebble engine.
 
 ## Getting Started
 
@@ -44,19 +50,25 @@ cd src
 go run main.go
 ```
 
-You can customize the benchmark parameters using flags:
+#### Configuration Flags
 
-```bash
-go run main.go --dataset-size 1000000 --point-queries 500000
-```
+The suite is highly configurable for different hardware and test scenarios:
 
-Run `go run main.go --help` to see all available options.
+| Flag | Default | Description |
+| :--- | :--- | :--- |
+| `--seed` | `42` | Seed for reproducibility of random data. |
+| `--dataset-size` | `5,000,000` | Number of entries in the initial dataset. |
+| `--cache-pages` | `4096` | Number of pages kept in the internal buffer cache. |
+| `--value-size` | `128` | Size of each value in bytes. |
+| `--cleanup-data` | `true` | Delete large temporary DB files after each test run. |
+
+Run `go run main.go --help` to see the full list of parameters.
 
 ### Viewing Results
 
-After running the benchmarks, the results are stored in `out/results/`.
-- **CSV files**: Raw data for each test.
-- **HTML files**: Interactive charts generated using `go-echarts`. Open these in your browser to visualize the results.
+After running the benchmarks, results are stored in `out/results/`:
+- **CSV files**: Raw data for further analysis.
+- **HTML files**: **Interactive charts** generated via `go-echarts`. These allow zooming, filtering by index type, and detailed inspection of data points.
 
 ### Building the Thesis
 
