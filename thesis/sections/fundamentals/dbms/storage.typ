@@ -80,7 +80,7 @@ In the following, the characteristics of these storage media will be described t
 
 ==== Hard Disk Drives (HDD)
 #gls("HDD")s are electromechanical storage devices that use spinning magnetic disks to store data. They have been the dominant form of secondary storage for decades due to their large capacity and relatively low cost @elmasri2016[p. 547]. However, they have slower access times and lower throughput compared to newer storage technologies like #gls("SSD"). 
-A #gls("HDD") has multiple discs which hold data and a read/write head that moves across the surface of the discs to access data. 
+An #gls("HDD") has multiple discs which hold data and a read/write head that moves across the surface of the discs to access data. 
 
 #figure(
   image("../../../assets/hdd.png", width: 50%),
@@ -90,12 +90,12 @@ A #gls("HDD") has multiple discs which hold data and a read/write head that move
 On each of these discs, data is organized in concentric circles called tracks, which are further divided into #gls("Sector")s. A #gls("Sector") is the smallest addressable unit on the physical disk, traditionally 512 bytes or 4 kB in size @elmasri2016[p. 549]. 
 
 The read/write head moves to the appropriate track and #gls("Sector") to access data.
-The performance of a #gls("HDD") is influenced by factors such as seek time (the time it takes for the head to move to the correct track), rotational latency (the time it takes for the desired #gls("Sector") to rotate under the head), and transfer rate (the speed at which data can be read or written once the head is in position) @elmasri2016[p. 547]. In total, the access time can be calculated as follows:
+The performance of an #gls("HDD") is influenced by factors such as seek time (the time it takes for the head to move to the correct track), rotational latency (the time it takes for the desired #gls("Sector") to rotate under the head), and transfer rate (the speed at which data can be read or written once the head is in position) @elmasri2016[p. 547]. In total, the access time can be calculated as follows:
 $$
 $ T_(a c c e s s) = T_(s e e k) + T_(r o t) + T_(t r a n s f e r) $
 $$
 
-Data is then read or written in #gls("Block")s, which are typically 4 kB in size @elmasri2016[p. 547]. The performance of a #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access leads to increased latency due to the need for the head to move around the disk. 
+Data is then read or written in #gls("Block")s, which are typically 4 kB in size @elmasri2016[p. 547]. The performance of an #gls("HDD") can be significantly affected by the access pattern, as sequential access minimizes seek time and rotational latency, while random access leads to increased latency due to the need for the head to move around the disk. 
 
 /*
 ... (rest of commented block)
@@ -108,14 +108,14 @@ On the other side, #gls("SSD") use semiconductor-based #gls("NAND") flash memory
   caption: [A schematic of a solid state drive @ssd], 
 ) <ssd-schematic>
 
-Inside of the actual storage, the data is written in flash cells, which are the smallest unit of storage in a #gls("SSD"), where bits in transistors are stored @os[p. 1]. Those are organized in #gls("Page")s with a typical size of 4 kB, which then are grouped into #gls("Block")s of 128 kB to 256 kB size @os[p. 1-2]. The performance of a #gls("SSD") is influenced by factors such as the type of #gls("NAND") flash type, the efficiency of the internal controller, and the #gls("Wearleveling") of the flash memory @os[p. 1]. 
+Inside of the actual storage, the data is written in flash cells, which are the smallest unit of storage in an #gls("SSD"), where bits in transistors are stored @os[p. 1]. Those are organized in #gls("Page")s with a typical size of 4 kB, which then are grouped into #gls("Block")s of 128 kB to 256 kB size @os[p. 1-2]. The performance of an #gls("SSD") is influenced by factors such as the type of #gls("NAND") flash type, the efficiency of the internal controller, and the #gls("Wearleveling") of the flash memory @os[p. 1]. 
 
 #figure(
   image("../../../assets/ssd2.png", width: 70%),
   caption: [A simple flash chip @os[p. 2]], 
 ) <flash-chip>
 
-To now read a physical #gls("Page"), we have a constant access time even though the data can be stored anywhere. This is called random access @os[p. 3] and is the key advantage of #gls("SSD") over #gls("HDD"). However, writing to a #gls("SSD") is more complex. Due to the nature of flash memory, data cannot be overwritten in place. Instead, an entire #gls("Block") must be erased before new data can be written, which leads to increased latency for write operations and can cause performance degradation over time as the drive fills up @os[p. 3]. To mitigate this issue, #gls("SSD") use techniques like #gls("Wearleveling") and #gls("gc") to manage the flash memory and maintain performance @os[p. 3-4]. 
+To now read a physical #gls("Page"), we have a constant access time even though the data can be stored anywhere. This is called random access @os[p. 3] and is the key advantage of #gls("SSD") over #gls("HDD"). However, writing to an #gls("SSD") is more complex. Due to the nature of flash memory, data cannot be overwritten in place. Instead, an entire #gls("Block") must be erased before new data can be written, which leads to increased latency for write operations and can cause performance degradation over time as the drive fills up @os[p. 3]. To mitigate this issue, #gls("SSD") use techniques like #gls("Wearleveling") and #gls("gc") to manage the flash memory and maintain performance @os[p. 3-4]. 
 However, #gls("SSD", plural:true) also provide better performance for sequential writes compared to random ones and therefore are very suitable for write throughput @kleppmann[p. 79]. This is because sequential patterns allow the internal controller to utilize parallel #gls("NAND") channels and minimize the overhead of #gls("gc") and #gls("writeamplification"). 
 
 ==== Buffer Management 
@@ -127,7 +127,7 @@ Common buffer replacement policies include:
 - *#gls("LRU")*: Evicts the #gls("Page") that has not been accessed for the longest time.
 - *#gls("MRU")*: Evicts the #gls("Page") that was accessed most recently.
 - *#gls("FIFO")*: Evicts the #gls("Page") that has been in the buffer pool the longest.
-- *Clock*: Evicts the #gls("Page") that has been accessed least recently, but uses a circular buffer and a "use" bit to track #gls("Page") usage.
+- *Clock*: Evicts a #gls("Page") by using a circular buffer and a "use" bit to approximate the #gls("LRU") algorithm.
 
 In addition to these policies, in practice, many #gls("DBMS") implement more sophisticated algorithms that take into account the specific workload and access patterns to optimize performance. However, for the purpose of this thesis, we will focus on the most common ones.
 

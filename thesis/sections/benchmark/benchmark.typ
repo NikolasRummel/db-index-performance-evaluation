@@ -11,8 +11,8 @@ In order to design the benchmark, we can use typical software engineering practi
 === Functional Requirements <fr>
 For the benchmark, the following index structures will be implemented and compared:
 - *B-Tree:* A normal B-Tree where data is stored in both #gls("Internal Node", plural: true) and in #gls("Leaf Node", plural: true) should be implemented like described in @btree
-- *B+-Tree:* A B+-Tree where data is only stored in linked #gls("Leaf Node", plural: true) based in order to compare the range query performance. Moreove because B+-Trees are the most common index structure used in #gls("DBMS").
-- *LSM-Tree:* Since there is not enough time to implement a full LSM-Tree from scratch, an existing implementation will be used. For this, some evaluation will be done on existing Go libraries and then the best fitting one will be choosen to be used. 
+- *B+-Tree:* A B+-Tree where data is only stored in linked #gls("Leaf Node", plural: true) based in order to compare the range query performance. Moreover, because B+-Trees are the most common index structure used in #gls("DBMS").
+- *LSM-Tree:* Since there is not enough time to implement a full LSM-Tree from scratch, an existing implementation will be used. For this, some evaluation will be done on existing Go libraries and then the best fitting one will be chosen to be used. 
 
 In order to compare the performance of these index structures and answering the research questions, the benchmark will consist of multiple tests (T1-T5) that will evaluate different aspects of the index structures under different workloads. The following will be designed to measure the following performance metrics:
 
@@ -24,7 +24,7 @@ In order to compare the performance of these index structures and answering the 
 
 + *Read heavy workload (T4):*  Here, the test simulates "realistic" workloads by executing a mix of read and write operations with a high read-to-write ratio (e.g., 95/5). Applications to this workload could be some E-commerce webshops or some social media platforms. It measures the response time of read operations over time to evaluate how well the index structures maintain read performance under a mostly read workload. The output should be a bar chart showing the median and 95th percentile read and write response times for each index structure.
 
-+ *Write heavy workload (T5):* Like in T4 and similar to T4, this test simulates a mixed workload but now with a high write-to-read ratio (e.g., 5/95). This could be realistic in some kind of database workload like for industial machines which stores sensor data or metrics in the database. It measures the response time of write operations over time to evaluate how well the index structures maintain write performance under a mostly write workload. The ouput is the same as in T4.
++ *Write heavy workload (T5):* Similar to T4, this test simulates a mixed workload but now with a high write-to-read ratio (e.g., 5/95). This could be realistic in some kind of database workload like for industrial machines which stores sensor data or metrics in the database. It measures the response time of write operations over time to evaluate how well the index structures maintain write performance under a mostly write workload. The output is the same as in T4.
 
 === Non-Functional Requirements
 In addition to the functional requirements, the benchmark should also meet the following non-functional requirements:
@@ -44,12 +44,12 @@ To select a programming language for the implementation of the benchmark a Utili
 + *Matrix for Decision:* A decision matrix will be created to evaluate the candidate languages based on the defined criteria.
 
 ==== Selection Criteria
-The selection of a programming language for a this project requires a balance between low-level hardware access and development efficiency, since only one person is working on the project and the implementation of index structures and a benchmark can be complex. 
+The selection of a programming language for this project requires a balance between low-level hardware access and development efficiency, since only one person is working on the project and the implementation of index structures and a benchmark can be complex. 
 Therefore, the following criteria with weighting were considered for the selection of the programming language:
 - *System Performance:* The language should provide low-level access to memory and hardware to allow for efficient implementation of index structures and the benchmark. 
 - *Language Complexity:* The effort required to implement a prototype of index structures and benchmark should be manageable, so that the implementation can be completed within the time frame of the thesis.
 
-- *Community and libraries:* The language should have a strong community and a good ecosystem of libraries. Also some #gls("DBMS") or similar projects implemented in the language should existst to ensure that it is suitable for database development.
+- *Community and libraries:* The language should have a strong community and a good ecosystem of libraries. Also some #gls("DBMS") or similar projects implemented in the language should exist to ensure that it is suitable for database development.
 
 - *Personal Experience :* Existing knowledge will be taken into account to ensure project completion within the time frame.
 
@@ -76,18 +76,18 @@ The candidate languages were scored from 1 (lowest) to 5 (highest) based on the 
   [Community & Ecosystem], [0.15], [5], [5], [4], [4], [5],
   [Personal Experience], [0.20], [2], [2], [1], [4], [5],
   [Learning Objectives], [0.20], [3], [3], [5], [5], [1],
-  [*Total Score*], [1.00], [3.65], [3.45], [3.25], [*4.4*], [3.45],
+  [*Total Score*], [1.00], [3.6], [3.4], [3.25], [*4.4*], [3.45],
 )
 
 ==== Result
-For this project, the Go programming language was choosen for the implementation of the index structures and the benchmark. 
-Inspired by the C programming language, Go is a statically typed, compiled language that however also provides high-level features like #gls("gc") and built-in support for concurrency @golang[preface p. xii] @godocs. Go was created by Google since they were dealing more and more with complex software systems @golang[preface p. xiiii] and now is widely used in the industry #footnote[https://survey.stackoverflow.co/2025/technology#most-popular-technologies-language]. 
-With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languages like C++ and Rust may be more performant but are more complex to work with, which is why Go was choosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some #gls("DBMS") like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
+For this project, the Go programming language was chosen for the implementation of the index structures and the benchmark. 
+Inspired by the C programming language, Go is a statically typed, compiled language that however also provides high-level features like #gls("gc") and built-in support for concurrency @golang[preface p. xii] @godocs. Go was created by `Google` since they were dealing more and more with complex software systems @golang[preface p. xiiii] and now is widely used in the industry #footnote[https://survey.stackoverflow.co/2025/technology#most-popular-technologies-language]. 
+With Go being a modern language, it provides a good balance between performance and ease of development, which makes it a good choice for implementing the index structures and the benchmark. Languages like C++ and Rust may be more performant but are more complex to work with, which is why Go was chosen. Additionally, Go has a huge standard library and a large ecosystem of third-party libraries that can be used to facilitate the implementation @godocs. There are also some #gls("DBMS") like CockroachDB that are implemented in Go, which shows that it is a suitable language for database development @cockroachdb.  
 
 === Libraries used
 In order to implement the benchmark and the index structures, some libraries will be used to facilitate the implementation. 
 
-For the implementation of the LSM-Tree, the library  #link("https://github.com/cockroachdb/pebble/")[Pebble] is used. `Pebble` is a high-performance embedded key-value store written in Go and developed by `Cockroach Labs`. It is inspired by `LevelDB` and `RocksDB`, and used by `CockroachDB`, a distributed SQL database @cockroach_pebble. Using `Pebble` allows leveraging a already working LSM-Tree implementation while focusing the project on benchmarking and analysis rather than low-level storage engine construction, since also implementing a full LSM-Tree from scratch would be too time consuming for this project.
+For the implementation of the LSM-Tree, the library  #link("https://github.com/cockroachdb/pebble/")[Pebble] is used. `Pebble` is a high-performance embedded key-value store written in Go and developed by `Cockroach Labs`. It is inspired by `LevelDB` and `RocksDB`, and used by `CockroachDB`, a distributed SQL database @pebble_readme. Using `Pebble` allows leveraging an already working LSM-Tree implementation while focusing the project on benchmarking and analysis rather than low-level storage engine construction, since also implementing a full LSM-Tree from scratch would be too time consuming for this project.
 
 For visualization of benchmark results, the library #link("https://github.com/go-echarts/go-echarts")[go-echarts] will be used. This library provides a straightforward API for generating interactive charts in Go, supporting common visualization types such as line charts, bar charts, and scatter plots. These visualizations will be displayed in a html website generated by the benchmark to allow for an easy analysis of the results.
 
@@ -95,19 +95,19 @@ For visualization of benchmark results, the library #link("https://github.com/go
 The benchmark will consist of mainly two components. The `benchmark` package will be responsible for implementing the benchmark and the tests, while the `dbms` package will be responsible for implementing the index structures and the `Storage Manager` . 
 
 
-#figure(caption: "Component Diagramm of the Benchmark", image( "../../assets/comp.svg"))
+#figure(caption: "Architecture overview of the Benchmark", image( "../../assets/comp.svg"))
 
 === Package `benchmark`
 The `benchmark` package will be responsible for implementing all tests and their execution. The `Benchmark Runner` will be responsible for executing the tests and collecting the results, while the `Dataset Generator` will be responsible for generating the dataset that will be used for the tests. The `Result Plotter` will be responsible for creating the visualizations of the results in form of graphs and charts.
 
 === Package `dbms`
-The `dbms` package will be responsible for implementing the index structures and the `Buffer Manager`. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple #gls("LRU") cache for optimizing these operations. The B-Tree, B+-Tree and LSM-Tree components will implement the respective index structures according to a common interface that will be defined to allow for a easy comparison of the different index structures under the same workloads and conditions.
+The `dbms` package will be responsible for implementing the index structures and the `Buffer Manager`. The `Buffer Manager` will be responsible for managing the I/O operations to the disk and providing a very simple #gls("LRU") cache for optimizing these operations. The B-Tree, B+-Tree and LSM-Tree components will implement the respective index structures according to a common interface that will be defined to allow for an easy comparison of the different index structures under the same workloads and conditions.
 
 Since only the B-Tree and B+-Tree will be implemented from scratch, the LSM-Tree component will be a wrapper and not use our `Buffer Manager` .
 
 
 === Entry Point (main.go)
-The entry point of the application will be the `main.go` file, which will be responsible for initializing the benchmark and executing the tests. It follows the typical structure of a #gls("IPO") model:
+The entry point of the application will be the `main.go` file, which will be responsible for initializing the benchmark and executing the tests. It follows the typical structure of an #gls("IPO") model:
 
 #figure(
   caption: "Entry Point of the Application",
@@ -188,7 +188,7 @@ type lruCache struct {
 ```],
 )
 
-The detailed implementation can be found in the source code, but with this idea, the pager component now can use this cache e.g for its `Read()` function to first checks if the page is in the cache or if it needs to be read from the disk: 
+The detailed implementation can be found in the source code, but with this idea, the pager component now can use this cache e.g for its `Read()` function to first check if the page is in the cache or if it needs to be read from the disk: 
 #figure(
   caption: "Read() function of the Pager component using the LRU cache.",
   sourcecode[```go
@@ -210,7 +210,7 @@ func (p *Pager) Read(id uint64) (Page, error) {
 Now that we have a simple `Buffer Manager` implemented, we can use it for the implementation of the index structures. 
 
 == Index implementations
-In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for a easy comparison of the different index structures under the same workloads and conditions. The interface will include normal #gls("CRUD") operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
+In order to compare the performance of the three indexes, a common interface will be defined that all implementations will adhere to. This will allow for an easy comparison of the different index structures under the same workloads and conditions. The interface will include normal #gls("CRUD") operations. In addition, to evaluate the performance of range queries, a Iterator interface will also be defined that allows for iterating over a range of key-value pairs. The interface will be defined as follows:
 #figure(
   caption: "Index Interface for all index implementations",
   sourcecode[```go
@@ -231,10 +231,10 @@ In order to compare the performance of the three indexes, a common interface wil
 ```],
 )
 
-Here, we use a simplified key value record where the key is an int64 and the value an actual bytle slice/array. Usually, the key would be a complex data type to not only support integer keys but also strings or other. Hovewer, for the sake of simplicity of this work, we will stick to this simplified soliution.
+Here, we use a simplified key value record where the key is an int64 and the value an actual byte slice. Usually, the key would be a complex data type to not only support integer keys but also strings or other. However, for the sake of simplicity of this work, we will stick to this simplified solution.
 
 === Generic Tree Implementation
-Since both the B-Tree and the B+-Tree have a lot of similarities in their implementation, a generic tree structure will be implemented that can be used for both index structures. This will allow for code reuse and a easier implementation of the two index structures where as storage specific details like the structure of the nodes will be implemented in the according B-Tree implemenations.
+Since both the B-Tree and the B+-Tree have a lot of similarities in their implementation, a generic tree structure will be implemented that can be used for both index structures. This will allow for code reuse and an easier implementation of the two index structures whereas storage specific details like the structure of the nodes will be implemented in the according B-Tree implementations.
 
 To implement this generically, the strategy pattern @strategy will be used where each B-Tree implements its specific logic (strategy) for operations like the range query. In a normal B-Tree, the range query would need to traverse both internal and leaf nodes, while in a B+-Tree, the range query would only need to traverse the linked leaf nodes. By using the strategy pattern, we can implement the common logic for both index structures in the generic tree implementation and then implement the specific logic for each index structure in their respective implementations.
 
@@ -354,9 +354,9 @@ func FindIdx(p pager.Page, key int64, n int, acc NodeAccessor, leaf bool) int {
 }
 ```],
 )
-A special case is when we are searching in a B+-Tree since in a internal node, we will find the key which only functions as a separator and does not have an value. In this case, we want to go to the right child subtree to find the actual record in a leaf node. 
+A special case is when we are searching in a B+-Tree since in an #gls("Internal Node"), we will find the key which only functions as a separator and does not have a value. In this case, we want to go to the right child subtree to find the actual record in a leaf node. 
 
-Next, the `insertRec` function checks if the key already exists in the current node at the position returned by `FindIdx`. If the key exists and the updated value is not bigger then the existing value, the value is updated in-place, otherwise the existing cell is deleted. 
+Next, the `insertRec` function checks if the key already exists in the current node at the position returned by `FindIdx`. If the key exists and the updated value is not bigger than the existing value, the value is updated in-place, otherwise the existing cell is deleted. 
 
 #figure(
   caption: [In-place update of an existing key if the new value is smaller or equal in size, otherwise the existing cell is deleted to make space for the new value.],
@@ -379,7 +379,7 @@ As a base case for the `insertRec` function, if we reach a leaf node, the new re
 As seen in @split, we have to handle different cases for the actual insertion. If there is enough space in the current node, we can simply insert a new cell in the current node. 
 However, if there is not enough space in the current node, we need to split the node and differentiate between two cases.
 + The Page is an internal node: The middle key is promoted to the parent node and the current node will be split into two nodes. The left child pointer of the promoted key will point to the left half of the original node, while the right child pointer will point to the new node containing the right half of the original node.
-+ The Page is a leaf node: Now this is a bit complex, since again we tried to generalize both B-Tree and B+-Tree. In case of a B-Tree, the middle cell is promoted to the parent node and cut from the original node, while in a B+-Tree, the middle key is promoted to the parent node but not cut from the original node, since in a B+-Tree leaf node, the actual key-value pairs are stored and the internal nodes only store separator keys. In addition, we know also have to link the new leaf node into the linked list of leaf nodes by updating the `nextLeaf` pointer of the new node to point to the next leaf and updating the `nextLeaf` pointer of the original node to point to the new node. 
++ The Page is a leaf node: Now this is a bit complex, since again we tried to generalize both B-Tree and B+-Tree. In case of a B-Tree, the middle cell is promoted to the parent node and cut from the original node, while in a B+-Tree, the middle key is promoted to the parent node but not cut from the original node, since in a B+-Tree leaf node, the actual key-value pairs are stored and the internal nodes only store separator keys. In addition, we also have to link the new leaf node into the linked list of leaf nodes by updating the `nextLeaf` pointer of the new node to point to the next leaf and updating the `nextLeaf` pointer of the original node to point to the new node. 
 
 ==== Get() Operation
 #figure(
@@ -421,7 +421,7 @@ return NIL
   )
 )
 
-Here, the B-Tree checks every node for the key since internal nodes also store values. We start at the root node and search for the key. If we can find it in the current node (curr), we can return the value. If not we go to the subtree with via the childPointer. If we reach the leaf and still did not found the key, we return NIL since the key does not exist in the tree. 
+Here, the B-Tree checks every node for the key since internal nodes also store values. We start at the root node and search for the key. If we can find it in the current node (curr), we can return the value. If not, we go to the subtree with the childPointer. If we reach the leaf and still did not find the key, we return NIL since the key does not exist in the tree. 
 
 The B+-Tree on the other hand first needs to find the leaf node where the key would be stored and then search for the key in the leaf node by following the child pointers until we reach a leaf node. Once we are at the leaf node, we search for the key and return the value if we find it, otherwise we return NIL.
 ==== Range Query <rq>
@@ -453,7 +453,7 @@ loop:
   )
 )
 
-The Next() function for the B-Tree is more complex since we need to traverse both internal and leaf nodes. We are doing a in-order traversal of the tree where we first visit the left child, then emit the current node and then visit the right child. We use a stack to keep track of the nodes we need to visit and an index to keep track of which child we are currently visiting.
+The Next() function for the B-Tree is more complex since we need to traverse both internal and leaf nodes. We are doing an in-order traversal of the tree where we first visit the left child, then emit the current node and then visit the right child. We use a stack to keep track of the nodes we need to visit and an index to keep track of which child we are currently visiting.
 
 In the B+-Tree contrary, the Next() function is much simpler since we only need to follow the linked list of leaf nodes. 
 
@@ -462,7 +462,7 @@ In the evaluation in @evaluation, we will see how much faster this approach is f
 === LSM-Tree Implementation
 To implement the existing LSM-Tree implementation, the Pebble library will be integrated into the index interface defined above. This will allow the benchmark to use the same interface for all index structures to compare their performance under the same workloads. 
 
-To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface. The `Open()` function will be responsible for initializing the Pebble DB with the appropriate options, such as the memory size for the memtable and disabling the write-ahead log (WAL) to ensure a fair comparison with the B-Tree and B+-Tree implementations, which also do not use a WAL.
+To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble DB and implements the Index interface. The `Open()` function will be responsible for initializing the Pebble DB with the appropriate options, such as the memory size for the memtable and disabling the #gls("WAL") to ensure a fair comparison with the B-Tree and B+-Tree implementations, which also do not have a fully synchronous #gls("WAL").
 
 #figure(
   caption: "Creation of the LSM-Tree struct and Open() function to initialize the Pebble DB.",
@@ -474,7 +474,7 @@ To create a LSM-Tree with Pebble, we can define a struct that wraps the Pebble D
       targetSize := memSize * 1024 * 1024
 
       opts := &pebble.Options{
-        DisableWAL:   true, // Disable for fairness with B-trees (which has no WAL)
+        DisableWAL:   true, // Disable for fairness with B-trees (which has no fully synchronous WAL)
         MemTableSize: uint64(targetSize),
       }
 
@@ -581,14 +581,14 @@ return nil
 )
 
 ==== T2: Range Query Performance
-Here, the implementation is similar to T1, but instead of measuring the response time for retrieving a single value, the response time for retrieving all key-value pairs within a specified key range is measured. During this test, not only one key range is used, but multiple ranges of always doublig size are used to evaluate how the performance of the index structures changes as the size of the result set increases. As default value, the minimum range is 4096 keys and the maximum is $4096*2^10$. 
+Here, the implementation is similar to T1, but instead of measuring the response time for retrieving a single value, the response time for retrieving all key-value pairs within a specified key range is measured. During this test, not only one key range is used, but multiple ranges of always doubling size are used to evaluate how the performance of the index structures changes as the size of the result set increases. As default value, the minimum range is 4096 keys and the maximum is $4096*2^10$. 
 
-The detailed implementation can be found in the source code, but the main idea is to use the `Range()` function of the index interface to get an iterator for the specified key range and then use the `Next()` function of the iterator to retrieve all key-value pairs in the range while measuring the response time. In theorie, as we saw in @rq, the B+-Tree should perform much better than the B-Tree for larger result sets since it only needs to traverse the linked list of leaf nodes, while the B-Tree needs to traverse both internal and leaf nodes. 
+The detailed implementation can be found in the source code, but the main idea is to use the `Range()` function of the index interface to get an iterator for the specified key range and then use the `Next()` function of the iterator to retrieve all key-value pairs in the range while measuring the response time. In theory, as we saw in @rq, the B+-Tree should perform much better than the B-Tree for larger result sets since it only needs to traverse the linked list of leaf nodes, while the B-Tree needs to traverse both internal and leaf nodes. 
 
 ==== T3: Write throughput Over Time
 This test should mimic a workload in for instance time series database where new data is continuously inserted into the database. Unlike the static lookups in T1 and T2, T3 focuses on the write path and the overhead associated with structural maintenance—such as B-Tree page splits or LSM-Tree compactions—under continuous load.
 
-The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number if random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a scenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the throughput then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start"))$.
+The benchmark uses a windowed measurement approach where, instead of calculating a single global average for the entire test, performance is recorded in discrete chunks of operations. During one window, a fixed number of random key-value pairs are inserted into the index structure, and the time taken for these insertions is measured. Random keys and values are generated to not end in a scenario where only at the right end of the tree is inserted, which would not be realistic for many workloads. After each window, the throughput then is derived by $ "Throughput" = "WindowSize" / (T_("now") - T_("window_start"))$.
 
 #figure(
   caption: [Core logic for windowed write Throughput measurement (T3)],
